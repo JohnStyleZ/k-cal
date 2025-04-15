@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Music Tunnel Cost Calculator</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: #f4f2f9;
+    }
+
+    .navigation {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 360px;
+      height: 70px;
+      background: #7b4dd6;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1001;
+      padding: 0 20px;
+    }
+
+    .navigation ul {
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      position: relative;
+      padding: 0;
+      margin: 0;
+    }
+
+    .navigation ul li {
+      width: 25%;
+      height: 70px;
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .navigation ul li a {
+      text-decoration: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+
+    .navigation ul li .icon {
+      line-height: 24px;
+      text-align: center;
+      color: #d6c9f7;
+      transition: 0.3s ease;
+    }
+
+    .navigation ul li .icon ion-icon {
+      font-size: 2.2rem;
+    }
+
+    .navigation ul li .text {
+      font-size: 0.6rem;
+      color: #d6c9f7;
+      margin-top: -4px;
+    }
+
+    .navigation ul li.active .icon,
+    .navigation ul li.active .text {
+      color: #fff;
+    }
+
+    .indicator {
+      position: absolute;
+      bottom: 4px;
+      height: 3px;
+      width: 25%;
+      background: #fff;
+      border-radius: 2px;
+      transition: left 0.3s ease;
+      left: 0;
+    }
+
+    .bottom-panel {
+      position: fixed;
+      bottom: 0;
+      left: 8px;
+      right: 8px;
+      width: auto;
+      height: 75vh;
+      background: #fff;
+      z-index: 1000;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+      transition: transform 0.3s ease;
+      transform: translateY(100%);
+      overflow-y: auto;
+      padding: 25px 10px 20px;
+    }
+
+    .bottom-panel.open {
+      transform: translateY(0);
+    }
+
+    .panel-header {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    #userModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    #userModal .box {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      max-width: 400px;
+      width: 100%;
+    }
+    
+  </style>
+</head>
+<body>
+  <div id="userModal">
+    <div class="box">
+      <h2>Welcome!</h2>
+      <label for="modalName">Name:</label>
+      <input type="text" id="modalName" style="width: 100%; padding: 8px; margin-bottom: 15px;" />
+      <label>Gender:</label><br/>
+      <label><input type="radio" name="modalGender" value="Male" /> Male</label><br/>
+      <label><input type="radio" name="modalGender" value="Female" /> Female</label><br/><br/>
+      <button onclick="submitUserInfo()">Continue</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- ... existing content ... -->
+  </div>
+
+  <div id="bottomPanel" class="bottom-panel">
+    <div class="panel-header" id="panelHeader">Panel</div>
+    <div id="panelContent">Content goes here...</div>
+  </div>
+
+  <div class="navigation">
+    <ul>
+      <li class="list active" onclick="togglePanel('participants')">
+        <a href="javascript:void(0);">
+          <span class="icon"><ion-icon name="people-outline"></ion-icon></span>
+          <span class="text">Participants</span>
+        </a>
+      </li>
+      <li class="list" onclick="togglePanel('calculator')">
+        <a href="javascript:void(0);">
+          <span class="icon"><ion-icon name="calculator-outline"></ion-icon></span>
+          <span class="text">Calculator</span>
+        </a>
+      </li>
+      <li class="list" onclick="togglePanel('history')">
+        <a href="javascript:void(0);">
+          <span class="icon"><ion-icon name="calendar-outline"></ion-icon></span>
+          <span class="text">History</span>
+        </a>
+      </li>
+      <li class="list" onclick="togglePanel('profile')">
+        <a href="javascript:void(0);">
+          <span class="icon"><ion-icon name="person-outline"></ion-icon></span>
+          <span class="text">Profile</span>
+        </a>
+      </li>
+      <div class="indicator" id="indicator"></div>
+    </ul>
+  </div>
+
+  <script>
+    const apiBase = 'https://admin-dashboard-e2ja.onrender.com';
+    let sessionStartTime = null;
+    let currentUser = { device_id: null, name: null, gender: null, participant_id: null };
+
+    async function initializeDeviceUser() {
+      const deviceId = localStorage.getItem('device_id');
+      if (deviceId) {
+        try {
+          const res = await fetch(`${apiBase}/api/device-check`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ device_id: deviceId })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            currentUser = { device_id: deviceId, name: data.name, gender: data.gender, participant_id: data.participant_id };
+            return;
+          }
+        } catch (err) {
+          console.error('Device check failed:', err);
+        }
+      }
+      document.getElementById('userModal').style.display = 'flex';
+    }
+
+    async function submitUserInfo() {
+      const name = document.getElementById('modalName').value.trim();
+      const gender = document.querySelector('input[name="modalGender"]:checked')?.value;
+      if (!name || !gender) return alert('Please enter name and select gender.');
+
+      const tempId = `temp_${Date.now()}`;
+      try {
+        const res = await fetch(`${apiBase}/api/device-check`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, gender, device_id: tempId })
+        });
+        const data = await res.json();
+        const finalId = `device_${data.participant_id}`;
+        await fetch(`${apiBase}/api/update-device-id`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ participant_id: data.participant_id, device_id: finalId })
+        });
+
+        localStorage.setItem('device_id', finalId);
+        currentUser = { device_id: finalId, name, gender, participant_id: data.participant_id };
+        document.getElementById('userModal').style.display = 'none';
+      } catch (err) {
+        alert('Registration failed.');
+        console.error(err);
+      }
+    }
+
+    window.addEventListener('load', initializeDeviceUser);
+  </script>
+  <script>
+    const panel = document.getElementById('bottomPanel');
+    const header = document.getElementById('panelHeader');
+    const content = document.getElementById('panelContent');
+    const indicator = document.getElementById('indicator');
+    const menuItems = document.querySelectorAll('.navigation .list');
+    let currentPanel = null;
+    let isPanelAnimating = false;
+
+    function togglePanel(type) {
+      if (isPanelAnimating) return;
+      const index = type === 'participants' ? 0 :
+                    type === 'calculator' ? 1 :
+                    type === 'history' ? 2 :
+                    type === 'profile' ? 3 : 0;
+
+      indicator.style.left = `${index * 25}%`;
+      menuItems.forEach(item => item.classList.remove('active'));
+      menuItems[index].classList.add('active');
+
+      if (currentPanel === type) {
+        closePanel();
+        return;
+      }
+
+      if (panel.classList.contains('open')) {
+        isPanelAnimating = true;
+        panel.classList.remove('open');
+        setTimeout(() => {
+          showPanel(type);
+          panel.classList.add('open');
+          isPanelAnimating = false;
+        }, 300);
+      } else {
+        showPanel(type);
+        panel.classList.add('open');
+      }
+    }
+
+    function closePanel() {
+      panel.classList.remove('open');
+      currentPanel = null;
+    }
+
+    function showPanel(type) {
+      currentPanel = type;
+      if (type === 'participants') {
+        header.textContent = 'Active Participants';
+        content.innerHTML = '<p>List of users currently in session.</p>';
+      } else if (type === 'calculator') {
+        if (!sessionStartTime) {
+          alert("Only the session starter can access calculator before session begins.");
+          closePanel();
+          return;
+        }
+        header.textContent = 'Calculator';
+        content.innerHTML = '<p>Cost calculator tools available here.</p>';
+      } else if (type === 'history') {
+        header.textContent = 'History';
+        content.innerHTML = `
+        <div style="text-align:center; margin-bottom:10px;">
+            <button onclick="changeMonth(-1)">←</button>
+            <span id="calendarMonthLabel" style="margin: 0 10px; font-weight: bold;"></span>
+            <button onclick="changeMonth(1)">→</button>
+        </div>
+        <div id="calendarHeader" style="display:grid; grid-template-columns:repeat(7,1fr); font-weight:bold; text-align:center; margin-bottom:5px;">
+        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+        <div id="calendar" style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px; text-align:center;"></div>
+
+        <div id="dayDetails" style="margin-top:15px; text-align:center;"></div>
+        `;
+        generateCalendar();
+
+      } else if (type === 'profile') {
+        header.textContent = 'Your Profile';
+        fetch(`${apiBase}/api/participant-sessions/${currentUser.participant_id}`)
+          .then(res => res.json())
+          .then(sessions => {
+            const totalSpent = sessions.reduce((sum, s) => sum + (parseFloat(s.adjusted_cost) || 0), 0);
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            const thisMonthSpent = sessions.filter(s => s.join_time?.startsWith(currentMonth))
+                                           .reduce((sum, s) => sum + (parseFloat(s.adjusted_cost) || 0), 0);
+            const sessionCount = sessions.length;
+            content.innerHTML = `
+              <p><strong>Name:</strong> ${currentUser.name}</p>
+              <p><strong>ID#:</strong> ${currentUser.participant_id}</p>
+              <p><strong>Gender:</strong> ${currentUser.gender}</p>
+              <p><strong>Total Spent:</strong> $${totalSpent.toFixed(2)}</p>
+              <p><strong>This Month:</strong> $${thisMonthSpent.toFixed(2)}</p>
+              <p><strong>Sessions Attended:</strong> ${sessionCount}</p>
+            `;
+          })
+          .catch(err => {
+            content.innerHTML = '<p>Error loading profile data.</p>';
+            console.error(err);
+          });
+      }
+    }
+    let calendarDate = new Date();
+
+function changeMonth(offset) {
+  calendarDate.setMonth(calendarDate.getMonth() + offset);
+  generateCalendar();
+}
+
+async function generateCalendar() {
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth(); // 0-based
+    const label = document.getElementById('calendarMonthLabel');
+    const cal = document.getElementById('calendar');
+    const dayDetails = document.getElementById('dayDetails');
+
+    label.textContent = calendarDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+    cal.innerHTML = '';
+    dayDetails.innerHTML = '';
+
+    const firstDay = new Date(year, month, 1);
+    const lastDate = new Date(year, month + 1, 0).getDate();
+    const startDay = firstDay.getDay(); // 0=Sun
+
+    const res = await fetch(`${apiBase}/api/participant-sessions/${currentUser.participant_id}`);
+    const data = await res.json();
+
+    const dayMap = {};
+    data.forEach(s => {
+        const date = new Date(s.join_time);
+        const key = date.toISOString().split('T')[0];
+        if (!dayMap[key]) dayMap[key] = 0;
+        if (!dayMap[key]) dayMap[key] = [];
+        dayMap[key].push({
+        cost: parseFloat(s.adjusted_cost || 0),
+        start: new Date(s.join_time),
+        end: new Date(s.leave_time)
+        });
+
+    });
+
+    for (let i = 0; i < startDay; i++) {
+        cal.appendChild(document.createElement('div')); // empty cell
+    }
+
+    for (let d = 1; d <= lastDate; d++) {
+        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const cell = document.createElement('div');
+        cell.textContent = d;
+        cell.style.padding = '8px';
+        cell.style.borderRadius = '6px';
+        cell.style.cursor = 'pointer';
+
+        if (dayMap[dateKey]) {
+        cell.style.background = '#7b4dd6';
+        cell.style.color = 'white';
+        cell.style.fontWeight = 'bold';
+        const sessions = dayMap[dateKey];
+        const total = sessions.reduce((sum, s) => sum + s.cost, 0);
+        cell.title = `Total: $${total.toFixed(2)}\nTimes:\n${sessions.map(s =>
+        `${s.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – ${s.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+        ).join('\n')}`;
+
+
+        }
+
+        cell.onclick = () => {
+        if (dayMap[dateKey]) {
+            const sessions = dayMap[dateKey];
+            const total = sessions.reduce((sum, s) => sum + s.cost, 0);
+            const times = sessions.map(s =>
+            `${s.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – ${s.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+            ).join('<br>');
+            dayDetails.innerHTML = `<strong>${dateKey}</strong><br>Total: $${total.toFixed(2)}<br>${times}`;
+
+
+        } else {
+            dayDetails.innerHTML = `<strong>${dateKey}:</strong> No data`;
+        }
+        };
+
+        cal.appendChild(cell);
+    }
+    }
+
+    let touchStartY = 0;
+    panel.addEventListener('touchstart', e => touchStartY = e.touches[0].clientY);
+    panel.addEventListener('touchmove', e => {
+      if (e.touches[0].clientY - touchStartY > 50) {
+        closePanel();
+        menuItems.forEach(item => item.classList.remove('active'));
+      }
+    });
+  </script>
+</body>
+</html>
