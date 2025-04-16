@@ -113,8 +113,10 @@
     }
 
     .bottom-panel.open {
-      transform: translateY(0);
+    transform: translateY(0);
+    padding-bottom: 100px; /* 👈 add this line */
     }
+
 
     .panel-header {
       text-align: center;
@@ -188,6 +190,33 @@
     .session-card button:hover {
     background: #6a3cc0;
     }
+
+    .participant-row {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    align-items: center;
+    font-size: 14px;
+    }
+
+    .participant-row > .name,
+    .participant-row > .time,
+    .participant-row > .minutes {
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    }
+
+    .participant-row > .name {
+    text-align: left;
+    font-weight: 600;
+    }
+
 
   </style>
 </head>
@@ -281,6 +310,14 @@
     let sessionStartTime = null;
     let currentUser = { device_id: null, name: null, gender: null, participant_id: null };
 
+    function formatTime(date) {
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const suffix = hours >= 12 ? 'PM' : 'AM';
+    const formatted = `${(hours % 12 || 12)}:${String(minutes).padStart(2, '0')} ${suffix}`;
+    return formatted;
+    }
+
     async function initializeDeviceUser() {
       const deviceId = localStorage.getItem('device_id');
       if (deviceId) {
@@ -338,7 +375,6 @@
       await loadActiveSessions();
       await checkAndResumeSessionFromDB();
     });
-
 
     async function loadLocations() {
     const res = await fetch(`${apiBase}/api/locations`);
@@ -552,13 +588,24 @@
 
         else if (type === 'calculator') {
         header.textContent = 'Cost Calculator';
+        // Disable confirm button if not host
+        const isHost = document.getElementById('endSessionBtn')?.style.display === 'inline-block';
+        const confirmBtn = document.getElementById('confirmBtn');
+        if (confirmBtn) {
+        confirmBtn.disabled = !isHost;
+        confirmBtn.style.opacity = isHost ? '1' : '0.5';
+        confirmBtn.title = isHost ? 'Confirm and save cost data' : 'Only the session host can confirm costs';
+        }
 
         content.innerHTML = `
             <div id="sessionDetails" style="margin-bottom: 20px; font-size: 15px;"></div>
 
             <div style="margin-bottom: 20px;">
-            <label><strong>Total Paid ($):</strong></label><br>
-            <input type="number" id="calcPaid" step="0.01" style="width: 100%; padding: 10px; font-size: 16px;" placeholder="Enter amount">
+            <label for="calcPaid" style="white-space: nowrap;"><strong>Total Paid ($):</strong></label>
+            <input type="number" id="calcPaid" step="0.01" placeholder="0.00" 
+                style="flex: 1; max-width: 120px; padding: 8px; font-size: 16px; border: 1px solid #ccc; border-radius: 6px;" />
+            <button onclick="confirmCostData()" style="padding: 10px 12px; background: #28a745; color: white; font-size: 14px; border: none; border-radius: 6px;">Confirm</button>
+            </div>
             </div>
 
             <div id="participantCostList" style="margin-bottom: 20px;"></div>
@@ -918,17 +965,26 @@ async function generateCalendar() {
     let totalMinutes = 0;
 
     participants.forEach(p => {
-        if (!p.join_time || !p.leave_time) return;
+        if (!p.join_time) return;
 
         const join = new Date(p.join_time);
-        const leave = new Date(p.leave_time);
+        const now = new Date();
+        const leave = p.leave_time ? new Date(p.leave_time) : now;
+
+
         const minutes = Math.max(0, Math.floor((leave - join) / 60000));
         totalMinutes += minutes;
+
         breakdown.push({
-        name: p.name,
-        minutes,
+            name: p.name,
+            minutes,
+            joinTime: join.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            leaveTime: leave.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            leaveUsedNow: !p.leave_time
         });
     });
+
+
 
     if (totalMinutes === 0) {
         document.getElementById('calcResult').innerHTML = '<p>No valid time data found.</p>';
@@ -942,10 +998,11 @@ async function generateCalendar() {
     let html = `<p><strong>Total Paid:</strong> $${totalPaid.toFixed(2)}<br><strong>Total Minutes:</strong> ${totalMinutes} min<br><strong>Rate:</strong> $${costPerMinute.toFixed(4)}/min</p>`;
     html += `<ul>`;
     breakdown.forEach(p => {
-        const cost = p.minutes * costPerMinute;
-        html += `<li><strong>${p.name}</strong>: ${p.minutes} min → <strong>$${cost.toFixed(2)}</strong></li>`;
+    const cost = p.minutes * costPerMinute;
+    html += `<li><strong>${p.name}</strong>: ${p.joinTime} – ${p.leaveTime} (${p.minutes} min) → <strong>$${cost.toFixed(2)}</strong></li>`;
     });
     html += `</ul>`;
+
 
     document.getElementById('calcResult').innerHTML = html;
     }
@@ -990,22 +1047,56 @@ async function generateCalendar() {
 
         window._calcParticipants = participants.map(p => {
         const join = new Date(p.join_time);
-        const leave = new Date(p.leave_time);
-        const mins = Math.max(0, Math.floor((leave - join) / 60000));
+        const leave = p.leave_time ? new Date(p.leave_time) : null;
         return {
             name: p.name,
-            joinTime: join.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            leaveTime: leave.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            minutes: mins
+            join,
+            leave,
+            isLive: !leave
         };
         });
 
+        // Start a dynamic updater
+        function updateLiveTimes() {
+        const now = new Date();
+        const listBlock = document.getElementById('participantCostList');
+
+        listBlock.innerHTML = window._calcParticipants.map(p => {
+            const effectiveLeave = p.leave || now;
+            const mins = Math.max(0, Math.floor((effectiveLeave - p.join) / 60000));
+            const joinStr = p.join.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Los_Angeles' });
+            const leaveStr = effectiveLeave.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Los_Angeles' });
+
+            p.minutes = mins;
+
+            return `
+            <div style="padding: 10px; background: #f9f9f9; border-radius: 6px; margin-bottom: 10px;">
+                <strong>${p.name}</strong><br>
+                ${joinStr} – ${leaveStr}${p.isLive ? ' <span style="color:green;">(now)</span>' : ''} → <strong>${mins} mins</strong>
+            </div>
+            `;
+        }).join('');
+        }
+
+        // Update every second
+        setInterval(() => {
+        if (window._calcParticipants?.some(p => p.isLive)) {
+            updateLiveTimes();
+        }
+        }, 1000);
+
+        updateLiveTimes(); // Run immediately once
+
+
         listBlock.innerHTML = window._calcParticipants.map(p => `
-        <div style="padding: 10px; background: #f9f9f9; border-radius: 6px; margin-bottom: 10px;">
-            <strong>${p.name}</strong><br>
-            ${p.joinTime} – ${p.leaveTime} → <strong>${p.minutes} mins</strong>
+        <div class="participant-row">
+            <div class="name">${p.name}</div>
+            <div class="time">${p.joinTime} – ${p.leaveTime}</div>
+            <div class="minutes">${p.minutes} min</div>
         </div>
         `).join('');
+
+
 
     } catch (err) {
         listBlock.innerHTML = 'Error fetching participants.';
@@ -1032,13 +1123,78 @@ async function generateCalendar() {
 
     const costPerMinute = totalPaid / totalMinutes;
     let html = `<p><strong>Rate:</strong> $${costPerMinute.toFixed(4)} / min</p><ul>`;
-    participants.forEach(p => {
+        participants.forEach(p => {
         const owed = costPerMinute * p.minutes;
+        p.adjusted_cost = parseFloat(owed.toFixed(2)); // Store it!
         html += `<li><strong>${p.name}:</strong> ${p.minutes} min → $${owed.toFixed(2)}</li>`;
     });
+
     html += `</ul>`;
 
     resultBlock.innerHTML = html;
+    }
+
+    async function confirmCostData() {
+    calculateFinalCosts();
+
+    const totalPaid = parseFloat(document.getElementById('calcPaid').value);
+    if (isNaN(totalPaid) || totalPaid <= 0) {
+        alert("Please enter a valid total amount.");
+        return;
+    }
+
+    let sessionId = document.getElementById('infoSessionId')?.textContent;
+    if (!sessionId) {
+        const res = await fetch(`${apiBase}/api/sessions/unpaid-host/${currentUser.participant_id}`);
+        if (!res.ok) {
+        alert("Session not found.");
+        return;
+        }
+        const session = await res.json();
+        sessionId = session.session_id;
+    }
+
+    // Check if session has ended
+    const sessionRes = await fetch(`${apiBase}/api/sessions/${sessionId}`);
+    const sessionData = (await sessionRes.json())[0];
+    if (!sessionData.end_time) {
+        alert("Please end the session before confirming payment.");
+        return;
+    }
+
+    // Confirm posting data
+    const participants = window._calcParticipants || [];
+    if (!participants.length) {
+        alert("No participant cost data available.");
+        return;
+    }
+
+    try {
+        // 1. Update session total
+        await fetch(`${apiBase}/api/sessions/${sessionId}/update-paid`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ total_actual_paid: totalPaid })
+        });
+
+        // 2. Update participant costs
+        await Promise.all(participants.map(p =>
+        fetch(`${apiBase}/api/participant-sessions/cost`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+            session_id: sessionId,
+            participant_name: p.name,
+            adjusted_cost: p.adjusted_cost
+            })
+        })
+        ));
+
+        alert("Cost confirmed and saved!");
+    } catch (err) {
+        console.error("Error confirming data:", err);
+        alert("Failed to confirm cost data.");
+    }
     }
 
   </script>
