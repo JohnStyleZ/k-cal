@@ -144,56 +144,68 @@
       width: 100%;
     }
     .location-select {
-    padding: 10px;
+    text-align: center; /* 👈 this centers the selected text */
+    padding: 12px;
     font-size: 16px;
     border: 1px solid #ccc;
     border-radius: 8px;
     width: 100%;
-    max-width: 300px;
-    margin-top: 10px;
+    max-width: 100%;
     background: #fff;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg fill=\'%237b4dd6\' height=\'24\' viewBox=\'0 0 24 24\' width=\'24\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>');
+    background-repeat: no-repeat;
+    background-position-x: 98%;
+    background-position-y: center;
+    background-size: 20px;
     }
+
 
     .session-card {
     background: #fff;
     border: 1px solid #ddd;
     border-left: 5px solid #7b4dd6;
     border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    padding: 12px 5px; /* 👈 reduced top/bottom padding */
+    margin-bottom: 10px; /* 👈 smaller gap between cards */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .session-card:hover {
+    transform: translateY(-3px);
     }
 
     .session-card h4 {
-    margin: 0 0 6px;
+    margin: 0; /* 👈 remove all default margin */
     font-size: 16px;
     color: #333;
+    line-height: 1.2;
     }
+
 
     .session-card p {
     margin: 4px 0;
-    color: #666;
     font-size: 14px;
+    color: #555;
     }
 
     .session-card button {
     margin-top: 10px;
-    padding: 8px 14px;
+    padding: 10px 16px;  /* Slightly bigger but not huge */
+    font-size: 15px;
     background: #7b4dd6;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 5px;
     cursor: pointer;
+    width: auto;         /* Let it size naturally */
+    min-width: 100px;     /* Optional: keeps it from being too small */
     }
 
-    .session-card button:hover {
-    background: #6a3cc0;
-    }
 
     .participant-row {
     display: flex;
-    gap: 10px;
     padding: 10px;
     background: #f9f9f9;
     border-radius: 6px;
@@ -202,20 +214,30 @@
     font-size: 14px;
     }
 
-    .participant-row > .name,
-    .participant-row > .time,
-    .participant-row > .minutes {
-    flex: 1;
-    text-align: center;
-    white-space: nowrap;
+    .participant-row > .name {
+    flex: 0 0 30%;
+    font-weight: 600;
+    text-align: left;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
     }
 
-    .participant-row > .name {
-    text-align: left;
-    font-weight: 600;
+    .participant-row > .time {
+    flex: 1 1 50%;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     }
+
+    .participant-row > .minutes {
+    flex: 0 0 20%;
+    text-align: right;
+    white-space: nowrap;
+    }
+
+
 
 
   </style>
@@ -245,30 +267,52 @@
     </div>
   </div>
   
-  <div class="container">
-    <!-- ... existing content ... -->
-    <div style="padding: 20px;">
-        <h2>Select Location</h2>
-        <select id="locationDropdown" class="location-select" onchange="loadActiveSessions()" style="padding: 10px; font-size: 16px; width: 100%; max-width: 300px;"></select>
-      
-        <h3 style="margin-top: 30px;">Active Sessions</h3>
-        <div id="activeSessionsList">Loading...</div>
+  <div class="container" style="padding: 20px; max-width: 600px; margin: auto;">
+    <h2 style="color: #4a2e91; margin-bottom: 15px; text-align: center;">🎵 Start or Join a Session</h2>
+  
+    <div style="margin-bottom: 20px;">
+      <label for="locationDropdown" style="display: block; font-weight: 600; margin-bottom: 6px;">Choose Location</label>
+      <select id="locationDropdown" class="location-select" onchange="loadActiveSessions()" style="
+        width: 100%;
+        max-width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        background-color: #fff;
+        appearance: none;
+        background-image: url('data:image/svg+xml;utf8,<svg fill=\'%237b4dd6\' height=\'24\' viewBox=\'0 0 24 24\' width=\'24\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>');
+        background-repeat: no-repeat;
+        background-position-x: 98%;
+        background-position-y: center;
+        background-size: 20px;
+        "></select>
+
     </div>
-    <div style="text-align: center; margin-top: 20px;">
-        <button id="startSessionBtn" onclick="startNewSession()" style="
-          background: #28a745;
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          font-size: 16px;
-          border-radius: 6px;
-          cursor: pointer;
-        ">
-          <i class="fas fa-play"></i> Start New Session
-        </button>
-      </div>
-        
+  
+    <div style="margin-bottom: 30px;">
+      <h3 style="color: #7b4dd6; font-size: 18px; margin-bottom: 12px;">Active Sessions</h3>
+      <div id="activeSessionsList">Loading...</div>
+    </div>
+  
+    <div style="text-align: center;">
+      <button id="startSessionBtn" onclick="startNewSession()" style="
+        background: linear-gradient(to right, #6a4cc0, #8f5fff);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: background 0.3s ease;
+      ">
+        <i class="fas fa-play-circle" style="margin-right: 8px;"></i> Start New Session
+      </button>
+    </div>
   </div>
+  
 
   <div id="bottomPanel" class="bottom-panel">
     <div class="panel-header" id="panelHeader">Panel</div>
@@ -636,7 +680,7 @@
         generateCalendar();
 
       } else if (type === 'profile') {
-        header.textContent = 'Your Profile';
+        header.textContent = '';
         fetch(`${apiBase}/api/participant-sessions/${currentUser.participant_id}`)
           .then(res => res.json())
           .then(sessions => {
@@ -646,13 +690,38 @@
                                            .reduce((sum, s) => sum + (parseFloat(s.adjusted_cost) || 0), 0);
             const sessionCount = sessions.length;
             content.innerHTML = `
-              <p><strong>Name:</strong> ${currentUser.name}</p>
-              <p><strong>ID#:</strong> ${currentUser.participant_id}</p>
-              <p><strong>Gender:</strong> ${currentUser.gender}</p>
-              <p><strong>Total Spent:</strong> $${totalSpent.toFixed(2)}</p>
-              <p><strong>This Month:</strong> $${thisMonthSpent.toFixed(2)}</p>
-              <p><strong>Sessions Attended:</strong> ${sessionCount}</p>
+            <div style="background: radial-gradient(circle at center, #7b4dd6 0%, #453174 100%); padding: 30px 20px 20px; border-radius: 20px; text-align: center; color: white; position: relative;">
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding: 0 10px; margin-bottom: 10px;">
+                <div><i class="fas fa-id-badge"></i> ID#${currentUser.participant_id}</div>
+                <div><i class="fas fa-venus-mars"></i> ${currentUser.gender}</div>
+                </div>
+
+                <img src="https://johnwusf.com/wechat_doghead.png" alt="Profile Picture" 
+                style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid white; object-fit: cover; margin-bottom: 10px;" />
+                
+                <h2 style="margin: 8px 0 2px;">${currentUser.name}</h2>
+            </div>
+
+            <div style="padding: 20px; background: #fff; border-radius: 0 0 20px 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 10px; border-bottom: 1px solid #eee;">
+                <div><i class="fas fa-dollar-sign" style="margin-right: 8px; color: #7b4dd6;"></i>Total Spent</div>
+                <div>$${totalSpent.toFixed(2)} <i class="fas fa-chevron-right" style="font-size: 12px; color: #ccc;"></i></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 10px; border-bottom: 1px solid #eee;">
+                <div><i class="fas fa-calendar-alt" style="margin-right: 8px; color: #7b4dd6;"></i>This Month</div>
+                <div>$${thisMonthSpent.toFixed(2)} <i class="fas fa-chevron-right" style="font-size: 12px; color: #ccc;"></i></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 10px;">
+                <div><i class="fas fa-music" style="margin-right: 8px; color: #7b4dd6;"></i>Sessions Attended</div>
+                <div>${sessionCount} <i class="fas fa-chevron-right" style="font-size: 12px; color: #ccc;"></i></div>
+                </div>
+            </div>
             `;
+
+
+
+
           })
           .catch(err => {
             content.innerHTML = '<p>Error loading profile data.</p>';
@@ -1025,7 +1094,7 @@ async function generateCalendar() {
         return;
         }
     } catch (err) {
-        detailBlock.innerHTML = 'Error fetching session.';
+        detailBlock.innerHTML = 'No unpaid session found.';
         console.error(err);
         return;
     }
@@ -1046,15 +1115,16 @@ async function generateCalendar() {
         }
 
         window._calcParticipants = participants.map(p => {
-        const join = new Date(p.join_time);
-        const leave = p.leave_time ? new Date(p.leave_time) : null;
         return {
+            id: p.participant_id, // 👈 include this!
             name: p.name,
-            join,
-            leave,
-            isLive: !leave
+            joinTime: new Date(p.join_time),
+            leaveTime: p.leave_time ? new Date(p.leave_time) : null,
+            adjusted_cost: 0
         };
         });
+
+
 
         // Start a dynamic updater
         function updateLiveTimes() {
@@ -1062,21 +1132,38 @@ async function generateCalendar() {
         const listBlock = document.getElementById('participantCostList');
 
         listBlock.innerHTML = window._calcParticipants.map(p => {
-            const effectiveLeave = p.leave || now;
-            const mins = Math.max(0, Math.floor((effectiveLeave - p.join) / 60000));
-            const joinStr = p.join.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Los_Angeles' });
-            const leaveStr = effectiveLeave.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Los_Angeles' });
+            const isLive = !p.leaveTime;
+            const effectiveLeave = isLive ? now : p.leaveTime;
+            const mins = Math.max(0, Math.floor((effectiveLeave - p.joinTime) / 60000));
+
+            const joinStr = p.joinTime.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: 'America/Los_Angeles'
+            });
+
+            const leaveStr = effectiveLeave.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: 'America/Los_Angeles'
+            });
 
             p.minutes = mins;
 
             return `
-            <div style="padding: 10px; background: #f9f9f9; border-radius: 6px; margin-bottom: 10px;">
-                <strong>${p.name}</strong><br>
-                ${joinStr} – ${leaveStr}${p.isLive ? ' <span style="color:green;">(now)</span>' : ''} → <strong>${mins} mins</strong>
+            <div class="participant-row">
+                <div class="name">${p.name}</div>
+                <div class="time">${joinStr} – ${leaveStr}${isLive ? ' <span style="color:green;">(now)</span>' : ''}</div>
+                <div class="minutes">${mins} min</div>
             </div>
             `;
         }).join('');
         }
+
+
+
 
         // Update every second
         setInterval(() => {
@@ -1088,13 +1175,32 @@ async function generateCalendar() {
         updateLiveTimes(); // Run immediately once
 
 
-        listBlock.innerHTML = window._calcParticipants.map(p => `
-        <div class="participant-row">
-            <div class="name">${p.name}</div>
-            <div class="time">${p.joinTime} – ${p.leaveTime}</div>
-            <div class="minutes">${p.minutes} min</div>
-        </div>
-        `).join('');
+        listBlock.innerHTML = window._calcParticipants.map(p => {
+        const joinStr = p.joinTime.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: 'America/Los_Angeles'
+        });
+
+        const leaveStr = p.leaveTime
+            ? p.leaveTime.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true,
+                timeZone: 'America/Los_Angeles'
+            })
+            : 'Now';
+
+        return `
+            <div class="participant-row">
+                <div class="name">${p.name}</div>
+                <div class="time">${joinStr} – ${leaveStr}</div>
+                <div class="minutes">${p.minutes} min</div>
+            </div>
+        `;
+        }).join('');
+
 
 
 
@@ -1171,24 +1277,23 @@ async function generateCalendar() {
 
     try {
         // 1. Update session total
-        await fetch(`${apiBase}/api/sessions/${sessionId}/update-paid`, {
+        await fetch(`${apiBase}/api/sessions/${sessionId}/paid`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ total_actual_paid: totalPaid })
         });
 
         // 2. Update participant costs
-        await Promise.all(participants.map(p =>
-        fetch(`${apiBase}/api/participant-sessions/cost`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-            session_id: sessionId,
-            participant_name: p.name,
-            adjusted_cost: p.adjusted_cost
-            })
-        })
-        ));
+        const costUpdates = participants.map(p => ({
+        participant_id: p.id, // make sure you're including `id` in _calcParticipants
+        adjusted_cost: p.adjusted_cost
+        }));
+
+        await fetch(`${apiBase}/api/sessions/${sessionId}/adjust-costs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ costs: costUpdates })
+        });
 
         alert("Cost confirmed and saved!");
     } catch (err) {
