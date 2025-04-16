@@ -141,7 +141,54 @@
       max-width: 400px;
       width: 100%;
     }
-    
+    .location-select {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 300px;
+    margin-top: 10px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .session-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-left: 5px solid #7b4dd6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    .session-card h4 {
+    margin: 0 0 6px;
+    font-size: 16px;
+    color: #333;
+    }
+
+    .session-card p {
+    margin: 4px 0;
+    color: #666;
+    font-size: 14px;
+    }
+
+    .session-card button {
+    margin-top: 10px;
+    padding: 8px 14px;
+    background: #7b4dd6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    }
+
+    .session-card button:hover {
+    background: #6a3cc0;
+    }
+
   </style>
 </head>
 <body>
@@ -156,9 +203,42 @@
       <button onclick="submitUserInfo()">Continue</button>
     </div>
   </div>
-
+  <div id="sessionInfoBlock" style="display:none; padding:20px; margin:20px; background:#fff; border-radius:12px; box-shadow:0 4px 8px rgba(0,0,0,0.1); max-width: 600px; margin-inline: auto;">
+    <h2 style="text-align:center; color:#7b4dd6;">🎵 Session Info</h2>
+    <p><strong>Location:</strong> <span id="infoLocation"></span></p>
+    <p><strong>Session #:</strong> <span id="infoSessionId"></span></p>
+    <p><strong>Session Start Time:</strong> <span id="infoStartTime"></span></p>
+    <p><strong>Your Join Time:</strong> <span id="infoJoinTime"></span></p>
+    <p><strong>Participants Joined:</strong> <span id="infoParticipants"></span></p>
+    <div style="margin-top:20px; display:flex; justify-content:space-between;">
+      <button onclick="leaveSession()" style="padding:10px 20px; background:#ccc; border:none; border-radius:6px;">Leave Session</button>
+      <button id="endSessionBtn" onclick="endSession()" style="padding:10px 20px; background:#dc3545; color:white; border:none; border-radius:6px; display:none;">End Session</button>
+    </div>
+  </div>
+  
   <div class="container">
     <!-- ... existing content ... -->
+    <div style="padding: 20px;">
+        <h2>Select Location</h2>
+        <select id="locationDropdown" class="location-select" onchange="loadActiveSessions()" style="padding: 10px; font-size: 16px; width: 100%; max-width: 300px;"></select>
+      
+        <h3 style="margin-top: 30px;">Active Sessions</h3>
+        <div id="activeSessionsList">Loading...</div>
+    </div>
+    <div style="text-align: center; margin-top: 20px;">
+        <button id="startSessionBtn" onclick="startNewSession()" style="
+          background: #28a745;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          font-size: 16px;
+          border-radius: 6px;
+          cursor: pointer;
+        ">
+          <i class="fas fa-play"></i> Start New Session
+        </button>
+      </div>
+        
   </div>
 
   <div id="bottomPanel" class="bottom-panel">
@@ -222,6 +302,7 @@
       document.getElementById('userModal').style.display = 'flex';
     }
 
+
     async function submitUserInfo() {
       const name = document.getElementById('modalName').value.trim();
       const gender = document.querySelector('input[name="modalGender"]:checked')?.value;
@@ -251,7 +332,113 @@
       }
     }
 
-    window.addEventListener('load', initializeDeviceUser);
+    window.addEventListener('load', async () => {
+      await initializeDeviceUser();
+      await loadLocations();
+      await loadActiveSessions();
+      await checkAndResumeSessionFromDB();
+    });
+
+
+    async function loadLocations() {
+    const res = await fetch(`${apiBase}/api/locations`);
+    const data = await res.json();
+    console.log('Fetched locations:', data); // <--- ADD THIS
+    const dropdown = document.getElementById('locationDropdown');
+    dropdown.innerHTML = '';
+    data.forEach(loc => {
+        const option = document.createElement('option');
+        option.value = loc.location_id;
+        option.textContent = loc.name;
+        dropdown.appendChild(option);
+    });
+    }
+
+
+    async function loadActiveSessions() {
+        const locationId = document.getElementById('locationDropdown').value;
+        const res = await fetch(`${apiBase}/api/sessions/active?location_id=${locationId}`);
+        const sessions = await res.json();
+      const activeContainer = document.getElementById('activeSessionsList');
+      activeContainer.innerHTML = '';
+      sessions.forEach(session => {
+        const div = document.createElement('div');
+        div.className = 'session-card';
+        div.innerHTML = `
+          <h4>Session #${session.session_id}</h4>
+          <p><strong>Location:</strong> ${session.location_name}</p>
+          <p><strong>Start Time:</strong> ${new Date(session.start_time).toLocaleString()}</p>
+          <p><strong>Participants:</strong> ${session.participant_count}</p>
+          <button onclick="joinSession(${session.session_id})">Join</button>
+        `;
+        activeContainer.appendChild(div);
+      });
+    }
+
+
+    async function startNewSession() {
+    const locationId = document.getElementById('locationDropdown').value;
+    if (!locationId) return alert("Please select a location.");
+
+    const startTime = new Date().toISOString();
+
+    const res = await fetch(`${apiBase}/api/sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+        start_time: startTime,
+        participant_id: currentUser.participant_id,
+        location_id: locationId
+        })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.session_id) {
+        const sessionId = data.session_id;
+
+        const joinTime = new Date().toISOString();
+        await fetch(`${apiBase}/api/participant-sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            participant_id: currentUser.participant_id,
+            session_id: sessionId,
+            join_time: joinTime,
+            leave_time: null
+        })
+        });
+
+        alert(`Session started! Session ID: ${sessionId}`);
+        await loadActiveSessions();
+
+        // Fetch participant count after join
+        const countRes = await fetch(`${apiBase}/api/sessions/active?location_id=${locationId}`);
+        const sessionList = await countRes.json();
+        const match = sessionList.find(s => s.session_id == sessionId);
+        const participant_count = match?.participant_count || 1;
+
+        showSessionInfo({
+        session_id: sessionId,
+        start_time: startTime,
+        location: document.querySelector(`#locationDropdown option[value="${locationId}"]`)?.textContent,
+        participant_count,
+        user_join_time: joinTime,
+        started_by_current_user: true
+        });
+
+    } else {
+        alert("Failed to start session.");
+    }
+    }
+
+
+
+
+    function joinSession(sessionId) {
+      alert(`Joining session ID: ${sessionId} (implement logic here)`);
+    }
+
   </script>
   <script>
     const panel = document.getElementById('bottomPanel');
@@ -297,20 +484,94 @@
       currentPanel = null;
     }
 
+    function showSessionInfo(session) {
+        document.querySelector('.container').style.display = 'none';
+        const block = document.getElementById('sessionInfoBlock');
+        document.getElementById('infoLocation').textContent = session.location || 'N/A';
+        document.getElementById('infoSessionId').textContent = session.session_id;
+        document.getElementById('infoStartTime').textContent = new Date(session.start_time).toLocaleString();
+        document.getElementById('infoJoinTime').textContent = new Date(session.user_join_time).toLocaleString();
+        document.getElementById('infoParticipants').textContent = session.participant_count;
+
+        if (session.started_by_current_user) {
+            document.getElementById('endSessionBtn').style.display = 'inline-block';
+        } else {
+            document.getElementById('endSessionBtn').style.display = 'none';
+        }
+
+        block.style.display = 'block';
+        }
+
     function showPanel(type) {
       currentPanel = type;
       if (type === 'participants') {
         header.textContent = 'Active Participants';
-        content.innerHTML = '<p>List of users currently in session.</p>';
-      } else if (type === 'calculator') {
-        if (!sessionStartTime) {
-          alert("Only the session starter can access calculator before session begins.");
-          closePanel();
-          return;
+
+        const sessionId = document.getElementById('infoSessionId')?.textContent;
+        if (!sessionId) {
+            content.innerHTML = '<p style="text-align:center; margin-top:20px;">No active session.</p>';
+            return;
         }
-        header.textContent = 'Calculator';
-        content.innerHTML = '<p>Cost calculator tools available here.</p>';
-      } else if (type === 'history') {
+
+        fetch(`${apiBase}/api/sessions/${sessionId}/participants`)
+            .then(res => res.json())
+            .then(users => {
+            if (users.length === 0) {
+                content.innerHTML = '<p style="text-align:center; margin-top:20px;">No participants currently in session.</p>';
+                return;
+            }
+
+            content.innerHTML = users.map(user => {
+                const joinTime = new Date(user.join_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return `
+                <div style="
+                    background: #f9f9ff;
+                    border-left: 4px solid ${user.name === currentUser.name ? '#28a745' : '#7b4dd6'};
+                    border-radius: 6px;
+                    padding: 10px 15px;
+                    margin-bottom: 10px;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+                ">
+                    <div style="font-weight:600; font-size: 15px;">
+                    ${user.name} ${user.name === currentUser.name ? '<span style="color:green;">(You)</span>' : ''}
+                    </div>
+                    <div style="font-size: 13px; color: #555; display: flex; justify-content: space-between;">
+                    <span>Gender: ${user.gender || 'N/A'}</span>
+                    <span>Joined: ${joinTime}</span>
+                    </div>
+                </div>
+                `;
+            }).join('');
+            })
+            .catch(err => {
+            console.error(err);
+            content.innerHTML = '<p style="text-align:center; color:red;">Error loading participants.</p>';
+            });
+        }
+
+
+        else if (type === 'calculator') {
+        header.textContent = 'Cost Calculator';
+
+        content.innerHTML = `
+            <div id="sessionDetails" style="margin-bottom: 20px; font-size: 15px;"></div>
+
+            <div style="margin-bottom: 20px;">
+            <label><strong>Total Paid ($):</strong></label><br>
+            <input type="number" id="calcPaid" step="0.01" style="width: 100%; padding: 10px; font-size: 16px;" placeholder="Enter amount">
+            </div>
+
+            <div id="participantCostList" style="margin-bottom: 20px;"></div>
+
+            <button onclick="calculateFinalCosts()" style="width: 100%; padding: 10px; background: #7b4dd6; color: white; font-size: 16px; border: none; border-radius: 6px;">Calculate</button>
+
+            <div id="calcResult" style="margin-top: 20px;"></div>
+        `;
+
+        loadSessionAndParticipantsForCalc();  // Load session + participant data
+        }
+
+        else if (type === 'history') {
         header.textContent = 'History';
         content.innerHTML = `
         <div style="text-align:center; margin-bottom:10px;">
@@ -442,7 +703,344 @@ async function generateCalendar() {
         closePanel();
         menuItems.forEach(item => item.classList.remove('active'));
       }
+    
+    async function loadActiveSessions() {
+    const res = await fetch(`${apiBase}/api/sessions/active`);
+    const sessions = await res.json();
+
+    const container = document.querySelector('.container');
+    container.innerHTML = `
+        <h2>Active Sessions</h2>
+        ${sessions.map(session => `
+        <div class="session-card">
+            <p><strong>Session #${session.session_id}</strong></p>
+            <p><strong>Location:</strong> ${session.location_name || 'N/A'}<br>
+            <p><strong>Start Time:</strong> ${new Date(session.start_time).toLocaleString()}</p>
+            <p><strong>Participants:</strong> ${session.participant_count}</p>
+            <button onclick="joinSession(${session.session_id})">Join</button>
+        </div>
+        `).join('')}
+    `;
+    }
+
     });
+    async function checkAndResumeSessionFromDB() {
+    const res = await fetch(`${apiBase}/api/participant-sessions/${currentUser.participant_id}`);
+    const sessions = await res.json();
+
+    const activeSession = sessions.find(s => !s.leave_time);
+    if (!activeSession) return;
+
+    const sessionId = activeSession.session_id;
+
+    const sessionRes = await fetch(`${apiBase}/api/sessions`);
+    const allSessions = await sessionRes.json();
+    const fullSession = allSessions.find(s => s.session_id == sessionId);
+    if (!fullSession) return;
+
+    const locRes = await fetch(`${apiBase}/api/locations`);
+    const locations = await locRes.json();
+    const locationName = locations.find(l => l.location_id == fullSession.location_id)?.name || 'Unknown';
+
+    // Get actual participant count from active session list
+    const countRes = await fetch(`${apiBase}/api/sessions/active?location_id=${fullSession.location_id}`);
+    const sessionList = await countRes.json();
+    const match = sessionList.find(s => s.session_id == sessionId);
+    const participant_count = match?.participant_count || 1;
+
+    showSessionInfo({
+        session_id: sessionId,
+        start_time: fullSession.start_time,
+        location: locationName,
+        participant_count,
+        user_join_time: activeSession.join_time,
+        started_by_current_user: fullSession.started_by == currentUser.participant_id
+    });
+    }
+
+    async function joinSession(sessionId) {
+    const joinTime = new Date().toISOString();
+
+    try {
+        await fetch(`${apiBase}/api/participant-sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            participant_id: currentUser.participant_id,
+            session_id: sessionId,
+            join_time: joinTime,
+            leave_time: null
+        })
+        });
+
+        const sessionRes = await fetch(`${apiBase}/api/sessions`);
+        const allSessions = await sessionRes.json();
+        const fullSession = allSessions.find(s => s.session_id == sessionId);
+
+        const locRes = await fetch(`${apiBase}/api/locations`);
+        const locations = await locRes.json();
+        const locationName = locations.find(l => l.location_id == fullSession.location_id)?.name || 'Unknown';
+
+        showSessionInfo({
+        session_id: sessionId,
+        start_time: fullSession.start_time,
+        location: locationName,
+        participant_count: 1,
+        user_join_time: joinTime,
+        started_by_current_user: fullSession.started_by == currentUser.participant_id
+        });
+    } catch (err) {
+        console.error('Error joining session:', err);
+        alert('Failed to join session');
+    }
+    }
+    async function leaveSession() {
+    const sessionId = document.getElementById('infoSessionId').textContent;
+    if (!sessionId || !currentUser.participant_id) return;
+
+    const leaveTime = new Date().toISOString();
+
+    try {
+        await fetch(`${apiBase}/api/participant-sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            participant_id: currentUser.participant_id,
+            session_id: sessionId,
+            leave_time: leaveTime
+        })
+        });
+
+        alert("You have left the session.");
+        document.getElementById('sessionInfoBlock').style.display = 'none';
+        document.querySelector('.container').style.display = 'block';
+        await loadActiveSessions();
+
+    } catch (err) {
+        console.error("Failed to leave session:", err);
+        alert("Error while leaving session.");
+    }
+    }
+
+
+    async function endSession() {
+    const sessionId = document.getElementById('infoSessionId').textContent;
+    if (!sessionId) return;
+
+    const endTime = new Date().toISOString();
+
+    try {
+        const res = await fetch(`${apiBase}/api/sessions/${sessionId}/end`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ end_time: endTime })
+        });
+
+        if (res.ok) {
+        alert("Session ended!");
+        document.getElementById('sessionInfoBlock').style.display = 'none';
+        document.querySelector('.container').style.display = 'block';
+        await loadActiveSessions();
+        } else {
+        alert("Failed to end session.");
+        }
+    } catch (err) {
+        console.error("Error ending session:", err);
+        alert("Error while ending session.");
+    }
+    }
+
+    // Add this helper function:
+    async function loadParticipantsForCalculation() {
+    const sessionId = document.getElementById('infoSessionId').textContent;
+    const res = await fetch(`${apiBase}/api/sessions/${sessionId}/participants`);
+    const data = await res.json();
+
+    const container = document.getElementById('calcParticipants');
+    container.innerHTML = '';
+
+    data.forEach(p => {
+        container.innerHTML += `
+        <div style="margin-bottom: 10px; padding: 10px; background: #f0f0f0; border-radius: 6px;">
+            <strong>${p.name}</strong><br>
+            Join: <input type="time" value="${new Date(p.join_time).toISOString().slice(11, 16)}" data-id="${p.participant_id}" class="joinTime"> 
+            Leave: <input type="time" value="${p.leave_time ? new Date(p.leave_time).toISOString().slice(11, 16) : ''}" class="leaveTime">
+        </div>
+        `;
+    });
+    }
+
+
+    async function calculateSessionCost() {
+    const totalPaid = parseFloat(document.getElementById('calcPaid').value);
+        if (isNaN(totalPaid) || totalPaid <= 0) {
+            alert("Please enter a valid amount.");
+            return;
+        }
+
+        let sessionId = document.getElementById('infoSessionId')?.textContent;
+
+    // If no session ID from UI, try to find the unpaid session started by this user
+    if (!sessionId) {
+    try {
+        const res = await fetch(`${apiBase}/api/sessions/unpaid-host/${currentUser.participant_id}`);
+        if (res.ok) {
+        const session = await res.json();
+        sessionId = session.session_id;
+        console.log("Using session_id:", sessionId);
+        console.log("Unpaid session found:", session);
+
+        } else {
+        alert("No unpaid session found for you.");
+        return;
+        }
+    } catch (err) {
+        console.error("Error fetching unpaid session:", err);
+        alert("Failed to find unpaid session.");
+        return;
+    }
+    }
+
+    const res = await fetch(`${apiBase}/api/sessions/${sessionId}/participants`);
+    const participants = await res.json();
+    console.log("Participants:", participants);
+
+
+
+
+    if (!participants.length) {
+        document.getElementById('calcResult').innerHTML = '<p>No participants found.</p>';
+        return;
+    }
+
+    // Calculate total minutes per participant and total minutes overall
+    const breakdown = [];
+    let totalMinutes = 0;
+
+    participants.forEach(p => {
+        if (!p.join_time || !p.leave_time) return;
+
+        const join = new Date(p.join_time);
+        const leave = new Date(p.leave_time);
+        const minutes = Math.max(0, Math.floor((leave - join) / 60000));
+        totalMinutes += minutes;
+        breakdown.push({
+        name: p.name,
+        minutes,
+        });
+    });
+
+    if (totalMinutes === 0) {
+        document.getElementById('calcResult').innerHTML = '<p>No valid time data found.</p>';
+        return;
+    }
+
+    // Cost per minute
+    const costPerMinute = totalPaid / totalMinutes;
+
+    // Final cost per user
+    let html = `<p><strong>Total Paid:</strong> $${totalPaid.toFixed(2)}<br><strong>Total Minutes:</strong> ${totalMinutes} min<br><strong>Rate:</strong> $${costPerMinute.toFixed(4)}/min</p>`;
+    html += `<ul>`;
+    breakdown.forEach(p => {
+        const cost = p.minutes * costPerMinute;
+        html += `<li><strong>${p.name}</strong>: ${p.minutes} min → <strong>$${cost.toFixed(2)}</strong></li>`;
+    });
+    html += `</ul>`;
+
+    document.getElementById('calcResult').innerHTML = html;
+    }
+    async function loadSessionAndParticipantsForCalc() {
+    const detailBlock = document.getElementById('sessionDetails');
+    const listBlock = document.getElementById('participantCostList');
+    const sessionId = document.getElementById('infoSessionId')?.textContent;
+
+    let session;
+    try {
+        if (sessionId) {
+        const sessionRes = await fetch(`${apiBase}/api/sessions/${sessionId}`);
+        session = (await sessionRes.json())[0];
+        } else {
+        const unpaidRes = await fetch(`${apiBase}/api/sessions/unpaid-host/${currentUser.participant_id}`);
+        session = await unpaidRes.json();
+        }
+        if (!session) {
+        detailBlock.innerHTML = 'No session found.';
+        return;
+        }
+    } catch (err) {
+        detailBlock.innerHTML = 'Error fetching session.';
+        console.error(err);
+        return;
+    }
+
+    detailBlock.innerHTML = `
+        <strong>Session #:</strong> ${session.session_id}<br>
+        <strong>Location:</strong> ${session.location_name || 'N/A'}<br>
+        <strong>Date:</strong> ${new Date(session.start_time).toLocaleDateString()}
+    `;
+
+    try {
+        const res = await fetch(`${apiBase}/api/sessions/${session.session_id}/participants`);
+        const participants = await res.json();
+
+        if (!participants.length) {
+        listBlock.innerHTML = 'No participants found.';
+        return;
+        }
+
+        window._calcParticipants = participants.map(p => {
+        const join = new Date(p.join_time);
+        const leave = new Date(p.leave_time);
+        const mins = Math.max(0, Math.floor((leave - join) / 60000));
+        return {
+            name: p.name,
+            joinTime: join.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            leaveTime: leave.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            minutes: mins
+        };
+        });
+
+        listBlock.innerHTML = window._calcParticipants.map(p => `
+        <div style="padding: 10px; background: #f9f9f9; border-radius: 6px; margin-bottom: 10px;">
+            <strong>${p.name}</strong><br>
+            ${p.joinTime} – ${p.leaveTime} → <strong>${p.minutes} mins</strong>
+        </div>
+        `).join('');
+
+    } catch (err) {
+        listBlock.innerHTML = 'Error fetching participants.';
+        console.error(err);
+    }
+    }
+
+    function calculateFinalCosts() {
+    const totalPaid = parseFloat(document.getElementById('calcPaid').value);
+    const resultBlock = document.getElementById('calcResult');
+
+    if (isNaN(totalPaid) || totalPaid <= 0) {
+        resultBlock.innerHTML = '<p>Please enter a valid total amount paid.</p>';
+        return;
+    }
+
+    const participants = window._calcParticipants || [];
+    const totalMinutes = participants.reduce((sum, p) => sum + p.minutes, 0);
+
+    if (totalMinutes === 0) {
+        resultBlock.innerHTML = '<p>No valid time data found.</p>';
+        return;
+    }
+
+    const costPerMinute = totalPaid / totalMinutes;
+    let html = `<p><strong>Rate:</strong> $${costPerMinute.toFixed(4)} / min</p><ul>`;
+    participants.forEach(p => {
+        const owed = costPerMinute * p.minutes;
+        html += `<li><strong>${p.name}:</strong> ${p.minutes} min → $${owed.toFixed(2)}</li>`;
+    });
+    html += `</ul>`;
+
+    resultBlock.innerHTML = html;
+    }
+
   </script>
 </body>
 </html>
