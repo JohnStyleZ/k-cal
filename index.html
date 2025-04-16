@@ -642,22 +642,24 @@
         }
 
         content.innerHTML = `
-            <div id="sessionDetails" style="margin-bottom: 20px; font-size: 15px;"></div>
+        <div id="sessionDetails" style="margin-bottom: 20px; font-size: 15px;"></div>
 
-            <div style="margin-bottom: 20px;">
-            <label for="calcPaid" style="white-space: nowrap;"><strong>Total Paid ($):</strong></label>
-            <input type="number" id="calcPaid" step="0.01" placeholder="0.00" 
-                style="flex: 1; max-width: 120px; padding: 8px; font-size: 16px; border: 1px solid #ccc; border-radius: 6px;" />
-            <button onclick="confirmCostData()" style="padding: 10px 12px; background: #28a745; color: white; font-size: 14px; border: none; border-radius: 6px;">Confirm</button>
-            </div>
-            </div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+            <label for="calcPaid" style="font-weight: 600;">Total Paid ($):</label>
+            <input type="number" id="calcPaid" step="0.01" placeholder="0.00"
+            style="flex: 1; min-width: 120px; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 6px;" />
+            <button onclick="confirmCostData()" style="padding: 10px 16px; background: #28a745; color: white; font-size: 14px; border: none; border-radius: 6px;">Confirm</button>
+        </div>
 
-            <div id="participantCostList" style="margin-bottom: 20px;"></div>
+        <div id="participantCostList" style="margin-bottom: 20px;"></div>
 
-            <button onclick="calculateFinalCosts()" style="width: 100%; padding: 10px; background: #7b4dd6; color: white; font-size: 16px; border: none; border-radius: 6px;">Calculate</button>
+        <button onclick="calculateFinalCosts()" style="width: 100%; padding: 12px; background: #7b4dd6; color: white; font-size: 16px; border: none; border-radius: 8px; font-weight: 600;">
+            🧮 Calculate Cost Breakdown
+        </button>
 
-            <div id="calcResult" style="margin-top: 20px;"></div>
+        <div id="calcResult" style="margin-top: 20px; font-size: 15px; line-height: 1.5;"></div>
         `;
+
 
         loadSessionAndParticipantsForCalc();  // Load session + participant data
         }
@@ -1228,17 +1230,34 @@ async function generateCalendar() {
     }
 
     const costPerMinute = totalPaid / totalMinutes;
-    let html = `<p><strong>Rate:</strong> $${costPerMinute.toFixed(4)} / min</p><ul>`;
-        participants.forEach(p => {
+    let html = '';
+    let breakdownText = `Cost Breakdown:\n`;
+
+    html += `<div style="background: #f9f9ff; padding: 10px; border-radius: 6px; margin-top: 10px;">`;
+
+    participants.forEach(p => {
         const owed = costPerMinute * p.minutes;
-        p.adjusted_cost = parseFloat(owed.toFixed(2)); // Store it!
-        html += `<li><strong>${p.name}:</strong> ${p.minutes} min → $${owed.toFixed(2)}</li>`;
+        p.adjusted_cost = parseFloat(owed.toFixed(2));
+        html += `
+        <div style="padding: 8px 0; border-bottom: 1px solid #eee;">
+            <strong>${p.name}</strong>: ${p.minutes} min → <span style="color: #28a745;">$${owed.toFixed(2)}</span>
+        </div>
+        `;
+        breakdownText += `${p.name}: ${p.minutes} min → $${owed.toFixed(2)}\n`;
     });
 
-    html += `</ul>`;
-
+    html += `</div>`;
     resultBlock.innerHTML = html;
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(breakdownText.trim()).then(() => {
+        alert("Cost breakdown copied to clipboard.");
+    }).catch(err => {
+        console.error("Copy failed:", err);
+        alert("Failed to copy to clipboard.");
+    });
     }
+
 
     async function confirmCostData() {
     calculateFinalCosts();
