@@ -237,7 +237,110 @@
     white-space: nowrap;
     }
 
+    #calendarStickyHeader {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+    }
 
+    .session-this-month {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background: #fafafa;
+    font-size: 14px;
+    }
+
+    .session-this-month .location {
+    flex: 1;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    }
+
+    .session-this-month .time {
+    flex: 1.2;
+    text-align: center;
+    white-space: nowrap;
+    }
+
+    .session-this-month .cost {
+    flex: 0.8;
+    text-align: right;
+    font-weight: bold;
+    white-space: nowrap;
+    }
+
+    #calendarHeader,
+    #calendar {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 2;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    }
+
+    #calendarStickyHeader {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+    }
+
+    .session-info-card {
+    background: #f6f5ff;
+    border-left: 4px solid #7b4dd6;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    font-family: 'Poppins', sans-serif;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    .session-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    }
+
+    .session-details {
+    display: flex;
+    flex-direction: column;
+    }
+
+    .session-title {
+    font-weight: 600;
+    font-size: 15px;
+    color: #4a2e91;
+    }
+
+    .session-time {
+    font-size: 13px;
+    color: #777;
+    margin-top: 2px;
+    }
+
+    .session-cost {
+    font-weight: 600;
+    font-size: 15px;
+    color: #28a745;
+    }
+
+    .session-date {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 2px;
+    }
 
 
   </style>
@@ -665,20 +768,25 @@
         }
 
         else if (type === 'history') {
+        header.style.display = 'none';
         header.textContent = 'History';
         content.innerHTML = `
-        <div style="text-align:center; margin-bottom:10px;">
+        <div id="calendarStickyHeader">
+            <div style="text-align:center; margin-bottom:10px;">
             <button onclick="changeMonth(-1)">←</button>
             <span id="calendarMonthLabel" style="margin: 0 10px; font-weight: bold;"></span>
             <button onclick="changeMonth(1)">→</button>
+            </div>
+            <div id="calendarHeader" style="display:grid; grid-template-columns:repeat(7,1fr); font-weight:bold; text-align:center; margin-bottom:5px;">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+            </div>
+            <div id="calendar" style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px; text-align:center;"></div>
         </div>
-        <div id="calendarHeader" style="display:grid; grid-template-columns:repeat(7,1fr); font-weight:bold; text-align:center; margin-bottom:5px;">
-        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-        </div>
-        <div id="calendar" style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px; text-align:center;"></div>
 
+        <div id="sessionListThisMonth" style="margin-top: 10px;"></div>
         <div id="dayDetails" style="margin-top:15px; text-align:center;"></div>
         `;
+
         generateCalendar();
 
       } else if (type === 'profile') {
@@ -739,80 +847,127 @@ function changeMonth(offset) {
 }
 
 async function generateCalendar() {
-    const year = calendarDate.getFullYear();
-    const month = calendarDate.getMonth(); // 0-based
-    const label = document.getElementById('calendarMonthLabel');
-    const cal = document.getElementById('calendar');
-    const dayDetails = document.getElementById('dayDetails');
+  const year = calendarDate.getFullYear();
+  const month = calendarDate.getMonth(); // 0-based
 
-    label.textContent = calendarDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
-    cal.innerHTML = '';
-    dayDetails.innerHTML = '';
+  // Update label only (don't overwrite full structure)
+  const label = document.getElementById('calendarMonthLabel');
+  const cal = document.getElementById('calendar');
+  const sessionListContainer = document.getElementById('sessionListThisMonth');
 
-    const firstDay = new Date(year, month, 1);
-    const lastDate = new Date(year, month + 1, 0).getDate();
-    const startDay = firstDay.getDay(); // 0=Sun
+  label.textContent = calendarDate.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'long',
+  });
 
-    const res = await fetch(`${apiBase}/api/participant-sessions/${currentUser.participant_id}`);
-    const data = await res.json();
+  cal.innerHTML = ''; // Clear calendar
+  sessionListContainer.innerHTML = ''; // Clear session list
 
-    const dayMap = {};
-    data.forEach(s => {
-        const date = new Date(s.join_time);
-        const key = date.toISOString().split('T')[0];
-        if (!dayMap[key]) dayMap[key] = 0;
-        if (!dayMap[key]) dayMap[key] = [];
-        dayMap[key].push({
-        cost: parseFloat(s.adjusted_cost || 0),
-        start: new Date(s.join_time),
-        end: new Date(s.leave_time)
-        });
+  // Fetch all sessions
+  const res = await fetch(`${apiBase}/api/participant-sessions/${currentUser.participant_id}`);
+  const data = await res.json();
 
+
+  // Filter to current month
+  const sessionsThisMonth = data.filter((s) => {
+    const date = new Date(s.join_time);
+    return date.getFullYear() === year && date.getMonth() === month;
+  });
+
+  // Display session list for the month
+  if (sessionsThisMonth.length) {
+    sessionListContainer.innerHTML = `
+      <h4 style="margin: 15px 0 10px; font-size: 16px;">Sessions This Month (${sessionsThisMonth.length})</h4>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        ${sessionsThisMonth
+          .map((s) => {
+            const start = new Date(s.join_time);
+            const end = s.leave_time ? new Date(s.leave_time) : null;
+            return `
+            <div class="session-info-card">
+                <div class="session-main">
+                <div class="session-details">
+                    <div class="session-title">${s.location_name || 'Unknown'}</div>
+                    <div class="session-time">
+                    ${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – 
+                    ${end ? end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now'}
+                    </div>
+                </div>
+                <div class="session-meta">
+                    <div class="session-date">
+                    ${start.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                    </div>
+                    <div class="session-cost">
+                    $${parseFloat(s.adjusted_cost || 0).toFixed(2)}
+                    </div>
+                </div>
+                </div>
+            </div>
+            `;
+
+
+
+          })
+          
+          .join('')}
+      </div>
+    `;
+
+  } else {
+    sessionListContainer.innerHTML = `<p style="color:#888; font-size:14px; margin-top:10px;">No sessions this month.</p>`;
+  }
+
+  // Build calendar
+  const firstDay = new Date(year, month, 1);
+  const lastDate = new Date(year, month + 1, 0).getDate();
+  const startDay = firstDay.getDay();
+
+  const dayMap = {};
+  data.forEach((s) => {
+    const date = new Date(s.join_time);
+    const key = date.toISOString().split('T')[0];
+    if (!dayMap[key]) dayMap[key] = [];
+    dayMap[key].push({
+      cost: parseFloat(s.adjusted_cost || 0),
+      start: new Date(s.join_time),
+      end: new Date(s.leave_time),
     });
+  });
 
-    for (let i = 0; i < startDay; i++) {
-        cal.appendChild(document.createElement('div')); // empty cell
+  for (let i = 0; i < startDay; i++) {
+    cal.appendChild(document.createElement('div')); // empty cell
+  }
+
+  for (let d = 1; d <= lastDate; d++) {
+    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const cell = document.createElement('div');
+    cell.textContent = d;
+    cell.style.padding = '8px';
+    cell.style.borderRadius = '6px';
+    cell.style.cursor = 'pointer';
+
+    if (dayMap[dateKey]) {
+      const sessions = dayMap[dateKey];
+      const total = sessions.reduce((sum, s) => sum + s.cost, 0);
+      cell.style.background = '#7b4dd6';
+      cell.style.color = 'white';
+      cell.style.fontWeight = 'bold';
+      cell.title = `Total: $${total.toFixed(2)}\nTimes:\n${sessions
+        .map(
+          (s) =>
+            `${s.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – ${s.end.toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}`
+        )
+        .join('\n')}`;
     }
 
-    for (let d = 1; d <= lastDate; d++) {
-        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const cell = document.createElement('div');
-        cell.textContent = d;
-        cell.style.padding = '8px';
-        cell.style.borderRadius = '6px';
-        cell.style.cursor = 'pointer';
-
-        if (dayMap[dateKey]) {
-        cell.style.background = '#7b4dd6';
-        cell.style.color = 'white';
-        cell.style.fontWeight = 'bold';
-        const sessions = dayMap[dateKey];
-        const total = sessions.reduce((sum, s) => sum + s.cost, 0);
-        cell.title = `Total: $${total.toFixed(2)}\nTimes:\n${sessions.map(s =>
-        `${s.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – ${s.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-        ).join('\n')}`;
+    cal.appendChild(cell);
+  }
+}
 
 
-        }
-
-        cell.onclick = () => {
-        if (dayMap[dateKey]) {
-            const sessions = dayMap[dateKey];
-            const total = sessions.reduce((sum, s) => sum + s.cost, 0);
-            const times = sessions.map(s =>
-            `${s.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – ${s.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-            ).join('<br>');
-            dayDetails.innerHTML = `<strong>${dateKey}</strong><br>Total: $${total.toFixed(2)}<br>${times}`;
-
-
-        } else {
-            dayDetails.innerHTML = `<strong>${dateKey}:</strong> No data`;
-        }
-        };
-
-        cal.appendChild(cell);
-    }
-    }
 
     let touchStartY = 0;
     panel.addEventListener('touchstart', e => touchStartY = e.touches[0].clientY);
