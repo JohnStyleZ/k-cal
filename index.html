@@ -154,7 +154,6 @@
       width: 100%;
     }
     .location-select {
-    text-align: center; /* 👈 this centers the selected text */
     padding: 12px;
     font-size: 16px;
     border: 1px solid #ccc;
@@ -169,7 +168,11 @@
     background-position-x: 98%;
     background-position-y: center;
     background-size: 20px;
+
+    /* This is the trick that actually centers selected option text */
+    text-align-last: center;
     }
+
 
 
     .session-card {
