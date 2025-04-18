@@ -35,6 +35,7 @@ body {
   align-items: center;
   z-index: 1001;
   padding: 0 20px;
+  margin-bottom: 10px;
 }
 
 .navigation ul {
@@ -372,14 +373,21 @@ body {
 
 .container {
   padding: 20px;
+  padding-bottom: 20px;
   max-width: 600px;
   margin: auto;
+  position: relative;
+  height: calc(100vh - 95px); /* Account for nav + padding */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .main-heading {
   color: var(--text-primary);
   margin-bottom: 15px;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .location-label {
@@ -501,12 +509,6 @@ body {
   box-sizing: border-box;
 }
 
-.active-sessions-container {
-  position: relative;
-  margin-bottom: 30px;
-  min-height: 200px;
-}
-
 .location-container {
   position: sticky;
   top: 0;
@@ -515,24 +517,26 @@ body {
   padding: 15px 0;
   margin-bottom: 0;
   box-shadow: 0 2px 8px var(--shadow-light);
+  flex-shrink: 0;
 }
 
 .sticky-header {
   position: sticky;
-  top: 60px; /* Adjust based on the height of the location container */
   background: var(--primary-bg-dark);
   padding: 15px 0 12px;
   z-index: 995;
   border-bottom: 1px solid var(--border-light);
   box-shadow: 0 2px 8px var(--shadow-light);
+  flex-shrink: 0;
 }
 
 .active-sessions-list {
   padding-top: 10px;
   padding-bottom: 10px;
-  max-height: calc(100vh - 280px);
   overflow-y: auto;
   position: relative;
+  flex: 1 1 auto;
+  margin-bottom: 10px;
 }
 
 /* Add scrollbar styling for the active sessions list */
@@ -651,4 +655,13 @@ body {
 
 .input-group button:hover {
   background: var(--primary-dark);
+}
+
+.active-sessions-container {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 } 
