@@ -174,6 +174,13 @@ async function loadActiveSessions() {
     if (res.ok) {
       const sessions = await res.json();
       const container = document.getElementById('activeSessionsList');
+      const startBtn = document.getElementById('startSessionBtn');
+      
+      // Show the start session button by default
+      if (startBtn) {
+        startBtn.style.display = 'flex';
+        startBtn.classList.remove('fade-out');
+      }
       
       if (sessions.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: #888;">No active sessions</p>';
@@ -232,13 +239,20 @@ async function loadActiveSessions() {
       // Add extra bottom margin to the last card
       if (container.children.length > 0) {
         const lastCard = container.children[container.children.length - 1];
-        lastCard.style.marginBottom = '140px';
+        lastCard.style.marginBottom = '30px';
       }
     }
   } catch (err) {
     console.error('Load active sessions failed:', err);
     document.getElementById('activeSessionsList').innerHTML = 
       '<p style="text-align: center; color: #888;">Failed to load sessions</p>';
+    
+    // Ensure start button is visible on error
+    const startBtn = document.getElementById('startSessionBtn');
+    if (startBtn) {
+      startBtn.style.display = 'flex';
+      startBtn.classList.remove('fade-out');
+    }
   }
 }
 
@@ -799,8 +813,27 @@ function setupScrollHandler() {
   let scrollingDown = false;
   let scrollTimeout;
   
+  // First check if there's enough content to justify hiding the button
+  function checkButtonVisibility() {
+    // Show button by default if there are few or no items
+    const itemCount = activeSessionsList.children.length;
+    const containerHeight = activeSessionsList.clientHeight;
+    const contentHeight = activeSessionsList.scrollHeight;
+    
+    // If content is shorter than container or very few items, always show button
+    if (contentHeight <= containerHeight || itemCount <= 2) {
+      startBtn.classList.remove('fade-out');
+      return false;
+    }
+    
+    return true;
+  }
+  
   // Track scroll direction and fade button accordingly
   activeSessionsList.addEventListener('scroll', function() {
+    // First check if we should even handle scrolling based on content amount
+    if (!checkButtonVisibility()) return;
+    
     const scrollTop = this.scrollTop;
     
     // Determine scroll direction
@@ -832,14 +865,22 @@ function setupScrollHandler() {
   const containerDiv = document.createElement('div');
   containerDiv.style.height = '10px';
   activeSessionsList.appendChild(containerDiv);
+  
+  // Initial check
+  checkButtonVisibility();
+  
+  // Also run check when sessions are loaded or changed
+  const observer = new MutationObserver(() => {
+    checkButtonVisibility();
+  });
+  observer.observe(activeSessionsList, { childList: true });
 }
 
 // Initialize the app
 window.addEventListener('load', async () => {
   setPanelHeight();
   await initializeDeviceUser();
-  await loadLocations();
-  await loadActiveSessions();
+  await loadLocations(); // loadLocations already calls loadActiveSessions, no need to call twice
   
   // Check if user has active session and set UI elements accordingly
   const hasActiveSession = await checkAndResumeSessionFromDB();
