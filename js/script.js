@@ -866,6 +866,116 @@ async function leaveSession() {
   const sessionId = document.getElementById('infoSessionId').textContent;
   if (!sessionId || !currentUser.participant_id) return;
 
+  // Check if user is host by checking if end session button is visible
+  const isHost = document.getElementById('endSessionBtn').style.display === 'inline-block';
+
+  if (isHost) {
+    // Host is trying to leave - special handling required
+    try {
+      // Fetch participants to see if transfer is possible
+      const res = await fetch(`${apiBase}/api/sessions/${sessionId}/participants`);
+      const data = await res.json();
+      
+      // Filter out current user and get active participants
+      const otherParticipants = data.filter(p => p.participant_id != currentUser.participant_id);
+      
+      if (otherParticipants.length > 0) {
+        // We have other participants - offer transfer option
+        const shouldTransfer = confirm("You are the host of this session. Would you like to transfer host responsibilities to another participant before leaving?");
+        
+        if (shouldTransfer) {
+          // Create participant selection UI
+          const selectionDiv = document.createElement('div');
+          selectionDiv.className = 'host-transfer-modal';
+          selectionDiv.innerHTML = `
+            <div class="host-transfer-content">
+              <h3>Select New Host</h3>
+              <p>Choose a participant to transfer host responsibilities:</p>
+              <div class="participant-list">
+                ${otherParticipants.map(p => `
+                  <div class="participant-option" data-id="${p.participant_id}">
+                    <span>${p.name}</span>
+                  </div>
+                `).join('')}
+              </div>
+              <div class="button-row">
+                <button id="cancelTransferBtn">Cancel</button>
+              </div>
+            </div>
+          `;
+          
+          document.body.appendChild(selectionDiv);
+          
+          // Add event listeners for participant selection
+          const options = selectionDiv.querySelectorAll('.participant-option');
+          options.forEach(option => {
+            option.addEventListener('click', async () => {
+              const newHostId = option.dataset.id;
+              
+              try {
+                // Call API to transfer host status (you'll need to create this endpoint)
+                await fetch(`${apiBase}/api/sessions/${sessionId}/transfer-host`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    new_host_id: newHostId
+                  })
+                });
+                
+                // Remove the selection UI
+                document.body.removeChild(selectionDiv);
+                
+                // Proceed with leaving the session
+                await performLeaveSession(sessionId);
+              } catch (err) {
+                console.error("Failed to transfer host:", err);
+                alert("Error transferring host status. Please try again.");
+              }
+            });
+          });
+          
+          // Handle cancel button
+          document.getElementById('cancelTransferBtn').addEventListener('click', () => {
+            document.body.removeChild(selectionDiv);
+          });
+          
+          return; // Exit function here to wait for user selection
+        } else {
+          // User declined transfer - ask if they want to end the session instead
+          const shouldEnd = confirm("Do you want to end the entire session instead of just leaving?");
+          
+          if (shouldEnd) {
+            // End the session
+            await endSession();
+            return;
+          }
+          // Otherwise continue with normal leave
+        }
+      } else {
+        // No other participants - ask if they want to end the session
+        const shouldEnd = confirm("You are the only participant in this session. Do you want to end the session?");
+        
+        if (shouldEnd) {
+          await endSession();
+          return;
+        }
+        // Otherwise continue with normal leave
+      }
+    } catch (err) {
+      console.error("Error checking participants:", err);
+    }
+  } else {
+    // Regular participant - just confirm leaving
+    const confirmLeave = confirm("Are you sure you want to leave this session?");
+    if (!confirmLeave) return;
+  }
+  
+  // Regular leave process
+  await performLeaveSession(sessionId);
+}
+
+// Helper function to actually perform the leave operation
+async function performLeaveSession(sessionId) {
   const leaveTime = new Date().toISOString();
 
   try {

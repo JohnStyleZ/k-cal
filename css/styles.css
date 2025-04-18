@@ -664,4 +664,85 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+/* Host Transfer Modal Styles */
+.host-transfer-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.host-transfer-content {
+  background-color: white;
+  border-radius: 12px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.host-transfer-content h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: var(--primary);
+  font-size: 18px;
+}
+
+.host-transfer-content p {
+  margin-bottom: 16px;
+  color: #555;
+  font-size: 14px;
+}
+
+.participant-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.participant-option {
+  padding: 14px 16px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.participant-option:last-child {
+  border-bottom: none;
+}
+
+.participant-option:hover {
+  background-color: #f8f4ff;
+}
+
+.participant-option span {
+  font-weight: 500;
+  color: #333;
+}
+
+.button-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.button-row button {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 500;
 } 
