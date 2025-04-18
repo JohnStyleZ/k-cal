@@ -582,15 +582,17 @@ body {
   box-shadow: 0 4px 12px var(--shadow-medium);
   z-index: 990;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 1;
 }
 
 .fixed-action-button.fade-out {
   opacity: 0;
   pointer-events: none;
+  transition: opacity 0.2s ease;
 }
 
 .fixed-action-button i {

@@ -182,12 +182,14 @@ async function loadActiveSessions() {
         startBtn.classList.remove('fade-out');
       }
       
+      // Clear the container and reset styles before adding new content
+      container.innerHTML = '';
+      container.style.paddingTop = '10px';
+      
       if (sessions.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: #888;">No active sessions</p>';
         return;
       }
-      
-      container.innerHTML = '';
       
       // Fetch all session details to get starter names
       const allSessionsRes = await fetch(`${apiBase}/api/sessions`);
@@ -829,24 +831,25 @@ function setupScrollHandler() {
     return true;
   }
   
-  // Track scroll direction and fade button accordingly
-  activeSessionsList.addEventListener('scroll', function() {
+  // Function to handle scroll events (works for both touch and mouse)
+  function handleScroll() {
     // First check if we should even handle scrolling based on content amount
     if (!checkButtonVisibility()) return;
     
-    const scrollTop = this.scrollTop;
+    const scrollTop = activeSessionsList.scrollTop;
     
     // Determine scroll direction
     scrollingDown = scrollTop > lastScrollTop;
     lastScrollTop = scrollTop;
     
     // Calculate when we're nearing the bottom of the list
-    const isNearBottom = scrollTop + this.clientHeight >= this.scrollHeight - 150;
+    // Use a larger threshold for mobile devices
+    const isNearBottom = scrollTop + activeSessionsList.clientHeight >= activeSessionsList.scrollHeight - 180;
     
-    // Handle button visibility
+    // Handle button visibility based on scroll direction and position
     if (scrollingDown && isNearBottom) {
       startBtn.classList.add('fade-out');
-    } else if (!scrollingDown) {
+    } else if (!isNearBottom || !scrollingDown) {
       startBtn.classList.remove('fade-out');
     }
     
@@ -855,15 +858,39 @@ function setupScrollHandler() {
     
     // Add a timeout to show the button again after scrolling stops
     scrollTimeout = setTimeout(() => {
+      // When scrolling stops, show button if not near bottom
       if (!isNearBottom) {
         startBtn.classList.remove('fade-out');
       }
     }, 300);
-  });
+  }
+  
+  // Function to explicitly show button - helps on mobile
+  function showButton() {
+    if (checkButtonVisibility()) {
+      const scrollTop = activeSessionsList.scrollTop;
+      const isNearBottom = scrollTop + activeSessionsList.clientHeight >= activeSessionsList.scrollHeight - 180;
+      
+      if (!isNearBottom) {
+        startBtn.classList.remove('fade-out');
+      }
+    }
+  }
+  
+  // Add scroll event listener (works for both desktop and mobile)
+  activeSessionsList.addEventListener('scroll', handleScroll, { passive: true });
+  
+  // Also handle touch events specifically for mobile
+  activeSessionsList.addEventListener('touchstart', showButton, { passive: true });
+  activeSessionsList.addEventListener('touchmove', handleScroll, { passive: true });
+  activeSessionsList.addEventListener('touchend', function() {
+    // After touch ends, check one more time with a delay
+    setTimeout(handleScroll, 100);
+  }, { passive: true });
   
   // Add a small amount of bottom space to the container for better scrolling
   const containerDiv = document.createElement('div');
-  containerDiv.style.height = '10px';
+  containerDiv.style.height = '40px'; // Increased for better mobile experience
   activeSessionsList.appendChild(containerDiv);
   
   // Initial check
