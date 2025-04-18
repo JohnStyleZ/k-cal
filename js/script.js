@@ -241,7 +241,7 @@ async function loadActiveSessions() {
       // Add extra bottom margin to the last card
       if (container.children.length > 0) {
         const lastCard = container.children[container.children.length - 1];
-        lastCard.style.marginBottom = '30px';
+        lastCard.style.marginBottom = '60px';
       }
     }
   } catch (err) {
@@ -814,6 +814,7 @@ function setupScrollHandler() {
   let lastScrollTop = 0;
   let scrollingDown = false;
   let scrollTimeout;
+  let spacerAdded = false;
   
   // First check if there's enough content to justify hiding the button
   function checkButtonVisibility() {
@@ -825,7 +826,26 @@ function setupScrollHandler() {
     // If content is shorter than container or very few items, always show button
     if (contentHeight <= containerHeight || itemCount <= 2) {
       startBtn.classList.remove('fade-out');
+      
+      // Remove spacer if it was added and no longer needed
+      if (spacerAdded) {
+        const spacer = activeSessionsList.querySelector('.scroll-spacer');
+        if (spacer) {
+          activeSessionsList.removeChild(spacer);
+          spacerAdded = false;
+        }
+      }
+      
       return false;
+    }
+    
+    // Add spacer if not already added
+    if (!spacerAdded) {
+      const containerDiv = document.createElement('div');
+      containerDiv.className = 'scroll-spacer';
+      containerDiv.style.height = '80px'; // For better scrolling experience
+      activeSessionsList.appendChild(containerDiv);
+      spacerAdded = true;
     }
     
     return true;
@@ -887,11 +907,6 @@ function setupScrollHandler() {
     // After touch ends, check one more time with a delay
     setTimeout(handleScroll, 100);
   }, { passive: true });
-  
-  // Add a small amount of bottom space to the container for better scrolling
-  const containerDiv = document.createElement('div');
-  containerDiv.style.height = '40px'; // Increased for better mobile experience
-  activeSessionsList.appendChild(containerDiv);
   
   // Initial check
   checkButtonVisibility();
