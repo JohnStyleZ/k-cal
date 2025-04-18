@@ -1,6 +1,6 @@
 const apiBase = 'https://admin-dashboard-e2ja.onrender.com';
 let sessionStartTime = null;
-let currentUser = { device_id: null, name: null, gender: null, participant_id: null };
+let currentUser = { device_id: null, name: null, gender: null, participant_id: null, email: null };
 
 // Variables for calendar and panel state
 let calendarDate = new Date();
@@ -34,14 +34,488 @@ async function initializeDeviceUser() {
       });
       if (res.ok) {
         const data = await res.json();
-        currentUser = { device_id: deviceId, name: data.name, gender: data.gender, participant_id: data.participant_id };
+        currentUser = { 
+          device_id: deviceId, 
+          name: data.name, 
+          gender: data.gender, 
+          participant_id: data.participant_id,
+          email: data.email
+        };
         return;
       }
     } catch (err) {
       console.error('Device check failed:', err);
     }
   }
-  document.getElementById('userModal').style.display = 'flex';
+  showInitialUserModal();
+}
+
+// Show the initial user modal with login/register options
+function showInitialUserModal() {
+  const modal = document.getElementById('userModal');
+  modal.style.display = 'flex';
+  
+  modal.innerHTML = `
+    <div class="box">
+      <div class="auth-tabs">
+        <div class="tab active" id="loginTab" onclick="switchTab('login')">Login</div>
+        <div class="tab" id="registerTab" onclick="switchTab('register')">Register</div>
+      </div>
+      
+      <!-- Login Form -->
+      <div id="loginForm" class="auth-form">
+        <label for="loginEmail">Email:</label>
+        <input type="email" id="loginEmail" class="modal-input" placeholder="your@email.com" />
+        
+        <label for="loginPassword">Password:</label>
+        <input type="password" id="loginPassword" class="modal-input" />
+        
+        <p style="text-align: right; margin: 5px 0;">
+          <a href="#" onclick="showForgotPasswordForm()">Forgot password?</a>
+        </p>
+        
+        <button onclick="handleLogin()" class="full-width-button">Login</button>
+      </div>
+      
+      <!-- Register Form -->
+      <div id="registerForm" class="auth-form" style="display: none;">
+        <label for="registerEmail">Email:</label>
+        <input type="email" id="registerEmail" class="modal-input" placeholder="your@email.com" />
+        
+        <label for="registerPassword">Password:</label>
+        <input type="password" id="registerPassword" class="modal-input" placeholder="Min. 6 characters" />
+        
+        <label for="registerName">Name:</label>
+        <input type="text" id="registerName" class="modal-input" />
+        
+        <label>Gender:</label><br/>
+        <label><input type="radio" name="registerGender" value="Male" /> Male</label><br/>
+        <label><input type="radio" name="registerGender" value="Female" /> Female</label><br/>
+        
+        <label for="securityQuestion">Security Question:</label>
+        <select id="securityQuestion" class="modal-input">
+          <option value="">Select a security question</option>
+          <option value="pet">What was your first pet's name?</option>
+          <option value="street">What street did you grow up on?</option>
+          <option value="mother">What is your mother's maiden name?</option>
+          <option value="school">What elementary school did you attend?</option>
+          <option value="birth">In what city were you born?</option>
+        </select>
+        
+        <label for="securityAnswer">Your Answer:</label>
+        <input type="text" id="securityAnswer" class="modal-input" />
+        <div class="info-text">Remember this answer! You'll need it to recover your account if you forget your password.</div>
+        
+        <button onclick="handleRegister()" class="full-width-button">Register</button>
+      </div>
+    </div>
+  `;
+  
+  // Add CSS styles for the modal components
+  document.head.insertAdjacentHTML('beforeend', `
+    <style>
+      .auth-tabs {
+        display: flex;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--border-light, #eee);
+      }
+      
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-bottom: 3px solid transparent;
+      }
+      
+      .tab.active {
+        border-bottom: 3px solid var(--primary, #8956ff);
+        color: var(--primary, #8956ff);
+        font-weight: 600;
+      }
+      
+      .full-width-button {
+        width: 100%;
+        padding: 12px;
+        background: var(--primary, #8956ff);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        margin-top: 20px;
+        cursor: pointer;
+      }
+      
+      .info-text {
+        font-size: 12px;
+        color: #666;
+        margin-top: -10px;
+        margin-bottom: 15px;
+      }
+      
+      .auth-form {
+        transition: all 0.3s ease;
+      }
+      
+      .security-question-box {
+        background: #f5f5f5;
+        padding: 12px;
+        border-radius: 6px;
+        margin: 10px 0 20px;
+        font-weight: 600;
+        color: var(--text-primary, #4a2e91);
+      }
+      
+      .button-container {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+      }
+      
+      .secondary-button {
+        padding: 10px 15px;
+        background: #eeeeee;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      
+      .primary-button {
+        padding: 10px 20px;
+        background: var(--primary, #8956ff);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+    </style>
+  `);
+}
+
+// Switch between login and register tabs
+function switchTab(tab) {
+  const loginTab = document.getElementById('loginTab');
+  const registerTab = document.getElementById('registerTab');
+  const loginForm = document.getElementById('loginForm');
+  const registerForm = document.getElementById('registerForm');
+  
+  if (tab === 'login') {
+    loginTab.classList.add('active');
+    registerTab.classList.remove('active');
+    loginForm.style.display = 'block';
+    registerForm.style.display = 'none';
+  } else {
+    loginTab.classList.remove('active');
+    registerTab.classList.add('active');
+    loginForm.style.display = 'none';
+    registerForm.style.display = 'block';
+  }
+}
+
+// Handle user login
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  
+  if (!email || !password) {
+    alert('Please enter both email and password');
+    return;
+  }
+  
+  try {
+    const res = await fetch(`${apiBase}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    
+    if (res.ok) {
+      const userData = await res.json();
+      
+      // Save device ID in localStorage
+      localStorage.setItem('device_id', userData.device_id);
+      
+      // Set current user
+      currentUser = {
+        device_id: userData.device_id,
+        name: userData.name,
+        gender: userData.gender,
+        participant_id: userData.participant_id,
+        email: userData.email
+      };
+      
+      // Close the modal and continue to the app
+    document.getElementById('userModal').style.display = 'none';
+      
+      // Load app data
+      loadLocations();
+    } else {
+      alert('Login failed. Please check your credentials.');
+    }
+  } catch (err) {
+    console.error('Login error:', err);
+    alert('Login failed. Please try again.');
+  }
+}
+
+// Handle user registration
+async function handleRegister() {
+  const email = document.getElementById('registerEmail').value.trim();
+  const password = document.getElementById('registerPassword').value;
+  const name = document.getElementById('registerName').value.trim();
+  const gender = document.querySelector('input[name="registerGender"]:checked')?.value;
+  const securityQuestion = document.getElementById('securityQuestion').value;
+  const securityAnswer = document.getElementById('securityAnswer').value.trim();
+  
+  if (!email || !password || !name || !gender || !securityQuestion || !securityAnswer) {
+    alert('Please fill all fields');
+    return;
+  }
+  
+  if (password.length < 6) {
+    alert('Password must be at least 6 characters');
+    return;
+  }
+  
+  if (securityAnswer.length < 2) {
+    alert('Please provide a valid answer to your security question');
+    return;
+  }
+  
+  try {
+    // Generate a temporary device ID
+    const tempId = `temp_${Date.now()}`;
+    
+    const res = await fetch(`${apiBase}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+        name,
+        gender,
+        security_question: securityQuestion,
+        security_answer: securityAnswer,
+        device_id: tempId
+      })
+    });
+
+    if (res.ok) {
+      const userData = await res.json();
+      
+      // Save the device ID to localStorage
+      localStorage.setItem('device_id', userData.device_id);
+      
+      // Set current user
+      currentUser = {
+        device_id: userData.device_id,
+        name: userData.name,
+        gender: userData.gender,
+        participant_id: userData.participant_id,
+        email: userData.email
+      };
+      
+      // Close the modal and continue to the app
+      document.getElementById('userModal').style.display = 'none';
+      
+      // Load app data
+      loadLocations();
+    } else {
+      const errorData = await res.json();
+      alert(errorData.message || 'Registration failed. Please try again.');
+    }
+  } catch (err) {
+    console.error('Registration error:', err);
+    alert('Registration failed. Please try again.');
+  }
+}
+
+// Show forgot password form (Step 1: Email Entry)
+function showForgotPasswordForm() {
+  const modal = document.getElementById('userModal');
+  
+  modal.innerHTML = `
+    <div class="box">
+      <h3>Reset Password</h3>
+      <p>Enter your email to begin password recovery.</p>
+      
+      <label for="resetEmail">Email:</label>
+      <input type="email" id="resetEmail" class="modal-input" placeholder="your@email.com" />
+      
+      <div class="button-container">
+        <button onclick="showInitialUserModal()" class="secondary-button">Back</button>
+        <button onclick="findSecurityQuestion()" class="primary-button">Continue</button>
+      </div>
+    </div>
+  `;
+}
+
+// Find security question for the entered email (Between Step 1 and 2)
+async function findSecurityQuestion() {
+  const email = document.getElementById('resetEmail').value.trim();
+  
+  if (!email) {
+    alert('Please enter your email address');
+    return;
+  }
+  
+  try {
+    // Show loading state
+    const continueButton = document.querySelector('.primary-button');
+    continueButton.textContent = 'Loading...';
+    continueButton.disabled = true;
+    
+    const res = await fetch(`${apiBase}/api/auth/get-security-question`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    
+    // Reset button state
+    continueButton.textContent = 'Continue';
+    continueButton.disabled = false;
+    
+    if (res.ok) {
+      const { questionId, questionText } = await res.json();
+      showSecurityAnswerForm(email, questionId, questionText);
+    } else {
+      // For security, don't reveal if the email exists or not
+      alert('If this email is registered, you will see your security question.');
+    }
+  } catch (err) {
+    console.error('Error fetching security question:', err);
+    alert('Error fetching security question. Please try again.');
+  }
+}
+
+// Show the security answer form (Step 2: Security Question)
+function showSecurityAnswerForm(email, questionId, questionText) {
+  const modal = document.getElementById('userModal');
+  
+  modal.innerHTML = `
+    <div class="box">
+      <h3>Security Verification</h3>
+      <p>Please answer your security question:</p>
+      
+      <div class="security-question-box">
+        ${questionText}
+      </div>
+      
+      <label for="securityAnswer">Your Answer:</label>
+      <input type="text" id="securityAnswer" class="modal-input" placeholder="Enter your answer" />
+      
+      <div class="button-container">
+        <button onclick="showForgotPasswordForm()" class="secondary-button">Back</button>
+        <button onclick="verifySecurityAnswer('${email}', '${questionId}')" class="primary-button">Verify</button>
+      </div>
+    </div>
+  `;
+}
+
+// Verify the security answer (Between Step 2 and 3)
+async function verifySecurityAnswer(email, questionId) {
+  const answer = document.getElementById('securityAnswer').value.trim();
+  
+  if (!answer) {
+    alert('Please enter your answer');
+    return;
+  }
+  
+  try {
+    // Show loading state
+    const verifyButton = document.querySelector('.primary-button');
+    verifyButton.textContent = 'Verifying...';
+    verifyButton.disabled = true;
+    
+    const res = await fetch(`${apiBase}/api/auth/verify-security-answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        question_id: questionId,
+        answer
+      })
+    });
+    
+    // Reset button state
+    verifyButton.textContent = 'Verify';
+    verifyButton.disabled = false;
+    
+    if (res.ok) {
+      const { resetToken } = await res.json();
+      showResetPasswordForm(resetToken);
+    } else {
+      alert('Incorrect answer. Please try again.');
+    }
+  } catch (err) {
+    console.error('Error verifying answer:', err);
+    alert('Error verifying answer. Please try again.');
+  }
+}
+
+// Show reset password form (Step 3: New Password)
+function showResetPasswordForm(resetToken) {
+  const modal = document.getElementById('userModal');
+  
+  modal.innerHTML = `
+    <div class="box">
+      <h3>Set New Password</h3>
+      <p>Create a new password for your account.</p>
+      
+      <label for="newPassword">New Password:</label>
+      <input type="password" id="newPassword" class="modal-input" placeholder="Min. 6 characters" />
+      
+      <label for="confirmPassword">Confirm Password:</label>
+      <input type="password" id="confirmPassword" class="modal-input" placeholder="Re-enter password" />
+      
+      <button onclick="resetPassword('${resetToken}')" class="full-width-button">Update Password</button>
+    </div>
+  `;
+}
+
+// Reset the password (Final step)
+async function resetPassword(resetToken) {
+  const newPassword = document.getElementById('newPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+  
+  if (!newPassword || newPassword.length < 6) {
+    alert('Password must be at least 6 characters');
+    return;
+  }
+  
+  if (newPassword !== confirmPassword) {
+    alert('Passwords do not match');
+    return;
+  }
+  
+  try {
+    // Show loading state
+    const updateButton = document.querySelector('.full-width-button');
+    updateButton.textContent = 'Updating...';
+    updateButton.disabled = true;
+    
+    const res = await fetch(`${apiBase}/api/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: resetToken,
+        password: newPassword
+      })
+    });
+    
+    if (res.ok) {
+      alert('Password has been successfully reset. You can now log in with your new password.');
+      showInitialUserModal();
+    } else {
+      updateButton.textContent = 'Update Password';
+      updateButton.disabled = false;
+      alert('Failed to reset password. Please try again.');
+    }
+  } catch (err) {
+    console.error('Password reset error:', err);
+    alert('Failed to reset password. Please try again.');
+  }
 }
 
 // Check and resume session from DB
@@ -79,65 +553,6 @@ async function checkAndResumeSessionFromDB() {
   });
   
   return true;
-}
-
-// Submit user info form
-async function submitUserInfo() {
-  const name = document.getElementById('modalName').value.trim();
-  const gender = document.querySelector('input[name="modalGender"]:checked')?.value;
-  if (!name || !gender) return alert('Please enter name and select gender.');
-
-  const tempId = `temp_${Date.now()}`;
-  try {
-    const res = await fetch(`${apiBase}/api/device-check`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, gender, device_id: tempId })
-    });
-    const data = await res.json();
-    const finalId = `device_${data.participant_id}`;
-    await fetch(`${apiBase}/api/update-device-id`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ participant_id: data.participant_id, device_id: finalId })
-    });
-
-    localStorage.setItem('device_id', finalId);
-    currentUser = { device_id: finalId, name, gender, participant_id: data.participant_id };
-    document.getElementById('userModal').style.display = 'none';
-  } catch (err) {
-    alert('Registration failed.');
-    console.error(err);
-  }
-}
-
-// Register new device
-async function registerNewDevice(name, gender) {
-  try {
-    const res = await fetch(`${apiBase}/api/register-device`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, gender })
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      localStorage.setItem('device_id', data.device_id);
-      currentUser = {
-        device_id: data.device_id,
-        name,
-        gender,
-        participant_id: data.participant_id
-      };
-      document.getElementById('userModal').style.display = 'none';
-      loadLocations();
-    } else {
-      alert('Failed to register device. Please try again.');
-    }
-  } catch (err) {
-    console.error('Register device failed:', err);
-    alert('Something went wrong. Please try again.');
-  }
 }
 
 // Load locations
@@ -221,7 +636,7 @@ async function loadActiveSessions() {
         card.className = 'session-card';
         card.innerHTML = `
           <div class="session-card-header">
-            <h4>Session #${session.session_id}</h4>
+          <h4>Session #${session.session_id}</h4>
             <span class="room-badge"><i class="fas fa-door-open"></i> Room ${roomNumber}</span>
           </div>
           <div class="session-info-grid">
@@ -307,60 +722,60 @@ async function confirmStartSession() {
   
   // Get location name
   const locationName = document.querySelector(`#modalLocationSelect option[value="${locationId}"]`)?.textContent;
-  
+
   const startTime = new Date().toISOString();
 
   try {
-    const res = await fetch(`${apiBase}/api/sessions`, {
+  const res = await fetch(`${apiBase}/api/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      start_time: startTime,
+      participant_id: currentUser.participant_id,
+        location_id: locationId,
+        room_number: roomNumber
+    })
+  });
+
+  const data = await res.json();
+
+  if (res.ok && data.session_id) {
+    const sessionId = data.session_id;
+
+    const joinTime = new Date().toISOString();
+    await fetch(`${apiBase}/api/participant-sessions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        start_time: startTime,
         participant_id: currentUser.participant_id,
-        location_id: locationId,
-        room_number: roomNumber
+        session_id: sessionId,
+        join_time: joinTime,
+        leave_time: null
       })
     });
 
-    const data = await res.json();
-
-    if (res.ok && data.session_id) {
-      const sessionId = data.session_id;
-
-      const joinTime = new Date().toISOString();
-      await fetch(`${apiBase}/api/participant-sessions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          participant_id: currentUser.participant_id,
-          session_id: sessionId,
-          join_time: joinTime,
-          leave_time: null
-        })
-      });
-
-      alert(`Session started! Session ID: ${sessionId}`);
+    alert(`Session started! Session ID: ${sessionId}`);
       
       // Update the main dropdown to reflect the selected location
       document.getElementById('locationDropdown').value = locationId;
-      await loadActiveSessions();
+    await loadActiveSessions();
 
-      // Fetch participant count after join
-      const countRes = await fetch(`${apiBase}/api/sessions/active?location_id=${locationId}`);
-      const sessionList = await countRes.json();
-      const match = sessionList.find(s => s.session_id == sessionId);
-      const participant_count = match?.participant_count || 1;
+    // Fetch participant count after join
+    const countRes = await fetch(`${apiBase}/api/sessions/active?location_id=${locationId}`);
+    const sessionList = await countRes.json();
+    const match = sessionList.find(s => s.session_id == sessionId);
+    const participant_count = match?.participant_count || 1;
 
-      showSessionInfo({
-        session_id: sessionId,
-        start_time: startTime,
+    showSessionInfo({
+      session_id: sessionId,
+      start_time: startTime,
         location: locationName,
-        participant_count,
-        user_join_time: joinTime,
-        started_by_current_user: true
-      });
-    } else {
-      alert("Failed to start session.");
+      participant_count,
+      user_join_time: joinTime,
+      started_by_current_user: true
+    });
+  } else {
+    alert("Failed to start session.");
     }
   } catch (err) {
     console.error("Error starting session:", err);
