@@ -788,6 +788,27 @@ async function joinSession(sessionId) {
   const joinTime = new Date().toISOString();
 
   try {
+    // First check if the user has already been in this session (for rejoining)
+    const userSessionsRes = await fetch(`${apiBase}/api/participant-sessions/${currentUser.participant_id}`);
+    const userSessions = await userSessionsRes.json();
+    
+    // Find if user was previously in this session
+    const previousJoin = userSessions.find(s => s.session_id == sessionId);
+    
+    // For rejoins, just update the existing record by clearing the leave_time
+    if (previousJoin && previousJoin.leave_time) {
+      // User is rejoining
+      await fetch(`${apiBase}/api/participant-sessions/rejoin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participant_id: currentUser.participant_id,
+          session_id: sessionId,
+          previous_record_id: previousJoin.id
+        })
+      });
+    } else {
+      // Normal join (first time)
     await fetch(`${apiBase}/api/participant-sessions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -798,6 +819,7 @@ async function joinSession(sessionId) {
         leave_time: null
       })
     });
+    }
 
     const sessionRes = await fetch(`${apiBase}/api/sessions`);
     const allSessions = await sessionRes.json();
@@ -913,7 +935,7 @@ async function leaveSession() {
               const newHostId = option.dataset.id;
               
               try {
-                // Call API to transfer host status (you'll need to create this endpoint)
+                // Call API to transfer host status
                 await fetch(`${apiBase}/api/sessions/${sessionId}/transfer-host`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -949,7 +971,12 @@ async function leaveSession() {
             await endSession();
             return;
           }
-          // Otherwise continue with normal leave
+          // Otherwise continue with normal leave - first confirm
+          const confirmLeave = confirm("Are you sure you want to leave without transferring host status?");
+          if (!confirmLeave) {
+            return; // User canceled, don't leave
+          }
+          // User confirmed leaving without transfer
         }
       } else {
         // No other participants - ask if they want to end the session
@@ -958,6 +985,12 @@ async function leaveSession() {
         if (shouldEnd) {
           await endSession();
           return;
+        }
+        
+        // User doesn't want to end session - confirm they really want to leave
+        const confirmLeave = confirm("If you leave without ending the session, it will remain active but empty. Are you sure you want to leave?");
+        if (!confirmLeave) {
+          return; // User canceled, don't leave
         }
         // Otherwise continue with normal leave
       }
@@ -989,11 +1022,52 @@ async function performLeaveSession(sessionId) {
       })
     });
 
-    alert("You have left the session.");
+    // Get session info for a better message
+    const sessionRes = await fetch(`${apiBase}/api/sessions`);
+    const allSessions = await sessionRes.json();
+    const session = allSessions.find(s => s.session_id == sessionId);
+    
+    // Reset UI
     document.getElementById('sessionInfoBlock').style.display = 'none';
     document.getElementById('startSessionBtn').style.display = 'flex';
     document.querySelector('.container').style.display = 'block';
+    
+    // Load sessions and then show a helpful message about rejoining
     await loadActiveSessions();
+    
+    // Check if the session is still active
+    const activeSessionsList = document.querySelector('.active-sessions-list');
+    const sessionStillActive = Array.from(activeSessionsList.querySelectorAll('.session-card'))
+      .some(card => card.dataset.sessionId === sessionId);
+    
+    if (sessionStillActive) {
+      // Create a toast-style notification to inform about rejoining
+      const toast = document.createElement('div');
+      toast.className = 'rejoin-toast';
+      toast.innerHTML = `
+        <div class="toast-content">
+          <div class="toast-message">You've left the session at ${session?.location || 'Unknown location'}.</div>
+          <div class="toast-submessage">You can rejoin from the active sessions list if needed.</div>
+        </div>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      // Add slide-in animation
+      setTimeout(() => {
+        toast.classList.add('show');
+      }, 100);
+      
+      // Auto remove after 5 seconds
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 300);
+      }, 5000);
+    } else {
+      alert("You have left the session.");
+    }
   } catch (err) {
     console.error("Failed to leave session:", err);
     alert("Error while leaving session.");
@@ -1096,6 +1170,7 @@ function showPanel(type) {
 
         content.innerHTML = users.map(user => {
           const joinTime = new Date(user.join_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          
           return `
             <div style="
               background: #f9f9ff;
@@ -1620,7 +1695,8 @@ async function loadSessionAndParticipantsForCalc() {
   `;
 
   try {
-    const res = await fetch(`${apiBase}/api/sessions/${session.session_id}/participants`);
+    // Use endpoint that includes participants who left
+    const res = await fetch(`${apiBase}/api/sessions/${session.session_id}/all-participants`);
     const participants = await res.json();
 
     if (!participants.length) {
@@ -1642,6 +1718,9 @@ async function loadSessionAndParticipantsForCalc() {
     function updateLiveTimes() {
       const now = new Date();
       const listBlock = document.getElementById('participantCostList');
+      
+      // Check if listBlock exists before updating
+      if (!listBlock) return;
 
       listBlock.innerHTML = window._calcParticipants.map(p => {
         const isLive = !p.leaveTime;
@@ -1664,19 +1743,24 @@ async function loadSessionAndParticipantsForCalc() {
 
         p.minutes = mins;
 
+        // Status indicator - green dot for active, red for left
+        const statusDot = isLive ? 
+          '<span class="status-dot active-dot">●</span>' : 
+          '<span class="status-dot inactive-dot">●</span>';
+
         return `
           <div class="participant-row">
-            <div class="name">${p.name}</div>
-            <div class="time">${joinStr} – ${leaveStr}${isLive ? ' <span style="color:green;">(now)</span>' : ''}</div>
+            <div class="name">${statusDot}${p.name}</div>
+            <div class="time">${joinStr} – ${leaveStr}</div>
             <div class="minutes">${mins} min</div>
           </div>
         `;
       }).join('');
     }
 
-    // Update every second
+    // Update every second - but only if participantCostList exists
     setInterval(() => {
-      if (window._calcParticipants?.some(p => !p.leaveTime)) {
+      if (window._calcParticipants?.some(p => !p.leaveTime) && document.getElementById('participantCostList')) {
         updateLiveTimes();
       }
     }, 1000);

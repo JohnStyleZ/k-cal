@@ -745,4 +745,72 @@ body {
   padding: 10px 16px;
   cursor: pointer;
   font-weight: 500;
-} 
+}
+
+/* Rejoin Toast Notification */
+.rejoin-toast {
+  position: fixed;
+  bottom: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--primary);
+  color: white;
+  padding: 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  transition: transform 0.3s ease-out, bottom 0.3s ease-out;
+  width: 90%;
+  max-width: 350px;
+  overflow: hidden;
+}
+
+.rejoin-toast.show {
+  bottom: 24px;
+}
+
+.toast-content {
+  padding: 16px;
+}
+
+.toast-message {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.toast-submessage {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* Status Dots for Participant Status */
+.status-dot {
+  margin-right: 6px;
+  display: inline-block;
+}
+
+.inactive-dot {
+  color: #dc3545; /* Red */
+}
+
+.active-dot {
+  color: #28a745; /* Green */
+  animation: pulse 2s infinite;
+}
+
+/* Breathing/pulsing animation for active dot */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    text-shadow: 0 0 0px rgba(40, 167, 69, 0.7);
+  }
+  50% {
+    opacity: 0.6;
+    text-shadow: 0 0 8px rgba(40, 167, 69, 0.9);
+  }
+  100% {
+    opacity: 1;
+    text-shadow: 0 0 0px rgba(40, 167, 69, 0.7);
+  }
+}
