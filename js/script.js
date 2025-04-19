@@ -88,9 +88,17 @@ function showInitialUserModal() {
         <label for="registerName">Name:</label>
         <input type="text" id="registerName" class="modal-input" />
         
-        <label>Gender:</label><br/>
-        <label><input type="radio" name="registerGender" value="Male" /> Male</label><br/>
-        <label><input type="radio" name="registerGender" value="Female" /> Female</label><br/>
+        <label>Gender:</label>
+        <div class="gender-selection">
+          <label class="gender-option">
+            <input type="radio" name="registerGender" value="Male" />
+            <span>Male</span>
+          </label>
+          <label class="gender-option">
+            <input type="radio" name="registerGender" value="Female" />
+            <span>Female</span>
+          </label>
+        </div>
         
         <label for="securityQuestion">Security Question:</label>
         <select id="securityQuestion" class="modal-input">

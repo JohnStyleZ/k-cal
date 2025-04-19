@@ -15,9 +15,17 @@
       <h2>Welcome!</h2>
       <label for="modalName">Name:</label>
       <input type="text" id="modalName" class="modal-input" />
-      <label>Gender:</label><br/>
-      <label><input type="radio" name="modalGender" value="Male" /> Male</label><br/>
-      <label><input type="radio" name="modalGender" value="Female" /> Female</label><br/><br/>
+      <label>Gender:</label>
+      <div class="gender-selection">
+        <label class="gender-option">
+          <input type="radio" name="modalGender" value="Male" />
+          <span>Male</span>
+        </label>
+        <label class="gender-option">
+          <input type="radio" name="modalGender" value="Female" />
+          <span>Female</span>
+        </label>
+      </div>
       <button onclick="submitUserInfo()">Continue</button>
     </div>
   </div>
