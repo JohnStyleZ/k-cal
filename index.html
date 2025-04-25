@@ -8,8 +8,34 @@
   <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .manual-button {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      padding: 8px 12px;
+      border-radius: 20px;
+      background: #6c5ce7;
+      color: white;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 14px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .manual-button:hover {
+      background: #5b4bc4;
+    }
+  </style>
 </head>
 <body>
+  <button class="manual-button" onclick="window.open('user-manual.html', '_blank')">
+    <ion-icon name="book-outline"></ion-icon>
+    Manual
+  </button>
   <div id="userModal">
     <div class="box">
       <h2>Welcome!</h2>
