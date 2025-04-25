@@ -1895,8 +1895,9 @@ async function confirmCostData() {
 
 // Add sign-out function
 function signOut() {
-  currentUser = { device_id: null, name: null, gender: null, participant_id: null, email: null };
-  localStorage.removeItem('user');
-  showInitialUserModal();
-  closePanel();
+  // Clear all data from localStorage
+  localStorage.clear();
+  
+  // Refresh the page
+  window.location.reload();
 } 
