@@ -1281,10 +1281,13 @@ function showPanel(type) {
               <div><i class="fas fa-calendar-alt" style="margin-right: 8px; color: #7b4dd6;"></i>This Month</div>
               <div>$${thisMonthSpent.toFixed(2)} <i class="fas fa-chevron-right" style="font-size: 12px; color: #ccc;"></i></div>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 10px; border-bottom: 1px solid #eee;">
               <div><i class="fas fa-music" style="margin-right: 8px; color: #7b4dd6;"></i>Sessions Attended</div>
               <div>${sessionCount} <i class="fas fa-chevron-right" style="font-size: 12px; color: #ccc;"></i></div>
             </div>
+            <button onclick="signOut()" style="width: 100%; margin-top: 20px; padding: 12px; background: #f44336; color: white; border: none; border-radius: 10px; font-weight: 600; display: flex; justify-content: center; align-items: center; gap: 8px;">
+              <i class="fas fa-sign-out-alt"></i> Sign Out
+            </button>
           </div>
         `;
       })
@@ -1888,4 +1891,12 @@ async function confirmCostData() {
     console.error("Error confirming data:", err);
     alert("Failed to confirm cost data.");
   }
+}
+
+// Add sign-out function
+function signOut() {
+  currentUser = { device_id: null, name: null, gender: null, participant_id: null, email: null };
+  localStorage.removeItem('user');
+  showInitialUserModal();
+  closePanel();
 } 
