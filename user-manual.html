@@ -98,7 +98,64 @@
         </header>
 
         <div class="section">
-            <h2>1. Sessions Management</h2>
+            <h2>1. Getting Started</h2>
+            <h3>Registration and Login</h3>
+
+            <h4>Registration</h4>
+            <div class="screenshot-container">
+                <img src="assets/screenshots/registration.PNG" alt="Registration Form" class="screenshot">
+                <p class="caption">Registration Form: Create your account with email and security features</p>
+            </div>
+            <ol>
+                <li>Click on the "Register" tab in the welcome screen</li>
+                <li>Fill in the required information:
+                    <ul>
+                        <li>Email address</li>
+                        <li>Password (minimum 6 characters)</li>
+                        <li>Name</li>
+                        <li>Gender selection</li>
+                        <li>Security question (for account recovery)</li>
+                        <li>Security answer</li>
+                    </ul>
+                </li>
+                <li>Click "Register" to create your account</li>
+            </ol>
+
+            <h4>Login</h4>
+            <div class="screenshot-container">
+                <img src="assets/screenshots/login.PNG" alt="Login Screen" class="screenshot">
+                <p class="caption">Login Screen: Access your account with email and password</p>
+            </div>
+            <ol>
+                <li>If you have a registered account:
+                    <ul>
+                        <li>Enter your email</li>
+                        <li>Enter your password</li>
+                        <li>Click "Login"</li>
+                    </ul>
+                </li>
+                <li>Forgot Password?
+                    <ul>
+                        <li>Click "Forgot password?" link</li>
+                        <li>Enter your email address</li>
+                        <li>Answer your security question</li>
+                        <li>Create a new password</li>
+                    </ul>
+                </li>
+            </ol>
+
+            <div class="warning-box">
+                <h4>⚠️ Important Notes</h4>
+                <ul>
+                    <li>Remember your security question answer for account recovery</li>
+                    <li>Passwords must be at least 6 characters long</li>
+                    <li>Each email address can only be registered once</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>2. Sessions Management</h2>
             <div class="screenshots-grid">
                 <div class="screenshot-container">
                     <img src="assets/screenshots/Mainpage.PNG" alt="Start or Join Session" class="screenshot">
@@ -109,33 +166,20 @@
                     <p>View and Join Active Sessions</p>
                 </div>
             </div>
-            <h3>Getting Started</h3>
+            <h3>Location Selection</h3>
             <ol>
-                <li>Select your location from the dropdown menu</li>
-                <li>View available active sessions in your location</li>
-                <li>Choose to join an existing session or start a new one</li>
+                <li>Choose your location from the dropdown menu</li>
+                <li>The system will show all active sessions at your selected location</li>
+                <li>You can either join an existing session or start a new one</li>
             </ol>
-        </div>
-
-        <div class="section">
-            <h2>2. Creating New Sessions</h2>
-            <div class="screenshots-grid">
-                <div class="screenshot-container">
-                    <img src="assets/screenshots/create_session.PNG" alt="New Session Modal" class="screenshot">
-                    <p>Create New Session Screen</p>
-                </div>
-                <div class="screenshot-container">
-                    <img src="assets/screenshots/current_joined_session_detail.PNG" alt="Session Info" class="screenshot">
-                    <p>Session Information View</p>
-                </div>
+            <div class="tip-box">
+                <h4>💡 Session Features</h4>
+                <ul>
+                    <li>Real-time updates of active sessions</li>
+                    <li>Easy-to-use location selector</li>
+                    <li>Quick join functionality for existing sessions</li>
+                </ul>
             </div>
-            <h3>Starting a Session</h3>
-            <ol>
-                <li>Click "Start New Session" button</li>
-                <li>Select the location if not already selected</li>
-                <li>Enter the room number</li>
-                <li>Click "Start Session" to begin</li>
-            </ol>
         </div>
 
         <div class="section">
@@ -146,49 +190,144 @@
                     <p>Active Participants List</p>
                 </div>
                 <div class="screenshot-container">
-                    <img src="assets/screenshots/calculator_panel.PNG" alt="Session Details" class="screenshot">
-                    <p>Session Details and Duration</p>
+                    <img src="assets/screenshots/current_joined_session_detail.PNG" alt="Session Info" class="screenshot">
+                    <p>Session Information View</p>
                 </div>
             </div>
-            <h3>Session Features</h3>
+            <h3>Session Information</h3>
             <ul>
-                <li>View all current participants in the session</li>
-                <li>Track session duration in real-time</li>
-                <li>Monitor current session costs</li>
-                <li>Leave or end session as needed</li>
+                <li>View detailed session information:
+                    <ul>
+                        <li>Session ID</li>
+                        <li>Room location</li>
+                        <li>Start time</li>
+                        <li>Current duration</li>
+                        <li>Running cost</li>
+                    </ul>
+                </li>
+                <li>Monitor participant activity:
+                    <ul>
+                        <li>See who's currently in the session</li>
+                        <li>Track individual join times</li>
+                        <li>View participant count</li>
+                    </ul>
+                </li>
             </ul>
-        </div>
-
-        <div class="section">
-            <h2>4. Cost Tracking and History</h2>
-            <div class="screenshots-grid">
-                <div class="screenshot-container">
-                    <img src="assets/screenshots/caulcated_cost.PNG" alt="Cost Breakdown" class="screenshot">
-                    <p>Session Cost Details</p>
-                </div>
-                <div class="screenshot-container">
-                    <img src="assets/screenshots/History.PNG" alt="Session History" class="screenshot">
-                    <p>Session History Calendar</p>
-                </div>
-            </div>
-            <h3>Cost Management</h3>
+            <h3>Host Controls</h3>
             <ul>
-                <li>View detailed cost breakdowns for each session</li>
-                <li>Track historical session costs</li>
-                <li>Review past sessions in calendar view</li>
+                <li>Session host has additional controls:
+                    <ul>
+                        <li>End the entire session</li>
+                        <li>Transfer host privileges to another participant</li>
+                        <li>Manage participant access</li>
+                    </ul>
+                </li>
+                <li>Host Transfer Process:
+                    <ul>
+                        <li>When the host attempts to leave the session:
+                            <ol>
+                                <li>A prompt will ask if they want to transfer host responsibilities</li>
+                                <li>If they choose yes, a modal will appear showing all active participants</li>
+                                <li>Click on a participant's name to select them as the new host</li>
+                                <li>The transfer happens automatically, and the original host leaves the session</li>
+                            </ol>
+                        </li>
+                        <li>Alternative options when leaving as host:
+                            <ul>
+                                <li>End the entire session instead of transferring</li>
+                                <li>Leave without transferring (if confirmed)</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
             </ul>
-            <div class="tip-box">
-                <h4>💡 Pro Tips</h4>
+            <div class="warning-box">
+                <h4>⚠️ Session Controls</h4>
                 <ul>
-                    <li>Costs are calculated based on session duration</li>
-                    <li>Use the calendar view to track your session history</li>
-                    <li>Monitor your spending patterns over time</li>
+                    <li>Use "Leave Session" to exit without ending the session</li>
+                    <li>Only the current host can use "End Session"</li>
+                    <li>Host privileges can be transferred to another participant</li>
+                    <li>If you're the last participant and host, you'll be asked to end the session</li>
+                    <li>Empty sessions without a host will remain active until manually ended</li>
                 </ul>
             </div>
         </div>
 
         <div class="section">
-            <h2>5. User Profile</h2>
+            <h2>4. Cost Calculator</h2>
+            <div class="screenshots-grid">
+                <div class="screenshot-container">
+                    <img src="assets/screenshots/calculator_panel.PNG" alt="Calculator Panel" class="screenshot">
+                    <p>Cost Calculator Panel</p>
+                </div>
+                <div class="screenshot-container">
+                    <img src="assets/screenshots/caulcated_cost.PNG" alt="Cost Breakdown" class="screenshot">
+                    <p>Detailed Cost Breakdown</p>
+                </div>
+            </div>
+            <h3>Cost Calculation Features</h3>
+            <ul>
+                <li>Real-time cost tracking:
+                    <ul>
+                        <li>Total session cost</li>
+                        <li>Individual cost per person</li>
+                        <li>Time-based rate calculation</li>
+                    </ul>
+                </li>
+                <li>Cost breakdown details:
+                    <ul>
+                        <li>Individual duration tracking</li>
+                        <li>Per-person cost allocation</li>
+                        <li>Rate information display</li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="tip-box">
+                <h4>💡 Cost Calculation Process</h4>
+                <ol>
+                    <li><strong>Calculate Button:</strong>
+                        <ul>
+                            <li>Click to preview the cost breakdown</li>
+                            <li>Shows the calculated amount without saving</li>
+                            <li>Allows you to verify costs before confirming</li>
+                        </ul>
+                    </li>
+                    <li><strong>Confirm Button:</strong>
+                        <ul>
+                            <li>Submits the final cost data to the server</li>
+                            <li>Automatically copies the cost breakdown to your clipboard</li>
+                            <li>Saves the session details for future reference</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>5. History and Records</h2>
+            <div class="screenshots-grid">
+                <div class="screenshot-container">
+                    <img src="assets/screenshots/History.PNG" alt="Session History" class="screenshot">
+                    <p>Session History Calendar View</p>
+                </div>
+            </div>
+            <h3>History Features</h3>
+            <ul>
+                <li>Calendar view of all sessions</li>
+                <li>Detailed session records including:
+                    <ul>
+                        <li>Date and time</li>
+                        <li>Location and room</li>
+                        <li>Total cost</li>
+                        <li>Participant list</li>
+                    </ul>
+                </li>
+                <li>Easy navigation between past sessions</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>6. User Profile</h2>
             <div class="screenshots-grid">
                 <div class="screenshot-container">
                     <img src="assets/screenshots/Profile.PNG" alt="User Profile" class="screenshot">
@@ -198,9 +337,30 @@
             <h3>Profile Features</h3>
             <ul>
                 <li>View your profile information</li>
-                <li>Track total spending across all sessions</li>
-                <li>Monitor your total session count</li>
+                <li>Track your session statistics:
+                    <ul>
+                        <li>Total sessions attended</li>
+                        <li>Total time spent</li>
+                        <li>Total spending</li>
+                    </ul>
+                </li>
+                <li>Account Management:
+                    <ul>
+                        <li>View your participant ID and gender</li>
+                        <li>Track monthly and total spending</li>
+                        <li>Sign out of your account using the sign-out button at the bottom of the profile panel</li>
+                    </ul>
+                </li>
             </ul>
+            <div class="tip-box">
+                <h4>💡 Sign Out Process</h4>
+                <ol>
+                    <li>Open your profile by clicking the Profile tab in the navigation bar</li>
+                    <li>Scroll to the bottom of your profile information</li>
+                    <li>Click the "Sign Out" button</li>
+                    <li>You will be returned to the login/registration screen</li>
+                </ol>
+            </div>
         </div>
 
     </div>
