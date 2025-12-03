@@ -76,7 +76,34 @@ function showInitialUserModal() {
         
         <button onclick="handleLogin()" class="full-width-button">Login</button>
       </div>
-      
+
+      <!-- Guest quick access -->
+      <div class="guest-divider">
+        <div class="divider-line"></div>
+        <div class="divider-text">or</div>
+        <div class="divider-line"></div>
+      </div>
+
+      <div id="guestForm" class="guest-form">
+        <label for="guestName">Continue as guest:</label>
+        <input type="text" id="guestName" class="modal-input" placeholder="Enter your name" />
+
+        <label class="guest-gender-title">Gender:</label>
+        <div class="gender-selection guest-gender">
+          <label class="gender-option">
+            <input type="radio" name="guestGender" value="Male" />
+            <span>♂ Male</span>
+          </label>
+          <label class="gender-option">
+            <input type="radio" name="guestGender" value="Female" />
+            <span>♀ Female</span>
+          </label>
+        </div>
+
+        <button onclick="handleGuestLogin()" class="outline-button">Continue as guest</button>
+        <p class="info-text">We’ll create a temporary guest account so you can start or join sessions without email.</p>
+      </div>
+
       <!-- Register Form -->
       <div id="registerForm" class="auth-form" style="display: none;">
         <label for="registerEmail">Email:</label>
@@ -197,7 +224,55 @@ function showInitialUserModal() {
         border-radius: 6px;
         cursor: pointer;
       }
-    </style>
+    
+      .guest-divider {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 20px 0 10px;
+      }
+
+      .divider-line {
+        flex: 1;
+        height: 1px;
+        background: #e0e0e0;
+      }
+
+      .divider-text {
+        font-size: 12px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .guest-form {
+        margin-top: 5px;
+      }
+
+      .guest-gender-title {
+        display: block;
+        margin-top: 10px;
+        margin-bottom: 6px;
+        font-size: 14px;
+        color: #444;
+      }
+
+      .guest-gender {
+        margin-bottom: 10px;
+      }
+
+      .outline-button {
+        width: 100%;
+        padding: 10px 12px;
+        background: #ffffff;
+        border: 1px solid var(--primary, #8956ff);
+        color: var(--primary, #8956ff);
+        border-radius: 8px;
+        font-size: 15px;
+        margin-top: 8px;
+        cursor: pointer;
+      }
+</style>
   `);
 }
 
@@ -264,6 +339,92 @@ async function handleLogin() {
   } catch (err) {
     console.error('Login error:', err);
     alert('Login failed. Please try again.');
+  }
+}
+
+
+// Handle guest login (name + gender only)
+async function handleGuestLogin() {
+  const nameInput = document.getElementById('guestName');
+  const name = nameInput ? nameInput.value.trim() : '';
+
+  if (!name) {
+    alert('Please enter a name to continue as guest.');
+    return;
+  }
+
+  const gender = document.querySelector('input[name="guestGender"]:checked')?.value;
+  if (!gender) {
+    alert('Please select a gender to continue as guest.');
+    return;
+  }
+
+  try {
+    const timestamp = Date.now();
+
+    // Auto-generate a unique email & password for this guest
+    const email = `guest+${timestamp}@guest.local`;
+    const password = `Guest${timestamp}`;
+
+    // Use a fixed security question/answer for guests
+    const securityQuestion = 'pet';
+    const securityAnswer = 'guest';
+
+    // Ensure we have a temporary device ID
+    let tempId = localStorage.getItem('device_id');
+    if (!tempId) {
+      if (window.crypto && window.crypto.randomUUID) {
+        tempId = window.crypto.randomUUID();
+      } else {
+        tempId = 'guest-' + timestamp;
+      }
+      localStorage.setItem('device_id', tempId);
+    }
+
+    const res = await fetch(`${apiBase}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+        name,
+        gender,
+        security_question: securityQuestion,
+        security_answer: securityAnswer,
+        device_id: tempId
+      })
+    });
+
+    if (res.ok) {
+      const userData = await res.json();
+
+      // Save device ID and set current user
+      localStorage.setItem('device_id', userData.device_id);
+
+      currentUser = {
+        device_id: userData.device_id,
+        name: userData.name,
+        gender: userData.gender,
+        participant_id: userData.participant_id,
+        email: userData.email
+      };
+
+      currentUser.isGuest = true;
+
+      // Close modal and load app data
+      const modal = document.getElementById('userModal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+      await loadLocations();
+    } else {
+      const errorText = await res.text();
+      console.error('Guest registration failed:', errorText);
+      alert('Guest login failed. Please try again or use email login.');
+    }
+  } catch (err) {
+    console.error('Guest login error:', err);
+    alert('Guest login failed. Please try again.');
   }
 }
 
