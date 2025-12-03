@@ -302,7 +302,6 @@ function switchTab(tab) {
   }
 }
 orm.style.display = 'block';
-  }
 }
 
 // Handle user login
