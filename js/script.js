@@ -53,100 +53,36 @@ async function initializeDeviceUser() {
 // Show the initial user modal with login/register options
 function showInitialUserModal() {
   const modal = document.getElementById('userModal');
+  if (!modal) return;
+
+  // Show the modal overlay
   modal.style.display = 'flex';
-  
-  modal.innerHTML = `
-    <div class="box">
-      <div class="auth-tabs">
-        <div class="tab active" id="loginTab" onclick="switchTab('login')">Login</div>
-        <div class="tab" id="registerTab" onclick="switchTab('register')">Register</div>
-      </div>
-      
-      <!-- Login Form -->
-      <div id="loginForm" class="auth-form">
-        <label for="loginEmail">Email:</label>
-        <input type="email" id="loginEmail" class="modal-input" placeholder="your@email.com" />
-        
-        <label for="loginPassword">Password:</label>
-        <input type="password" id="loginPassword" class="modal-input" />
-        
-        <p style="text-align: right; margin: 5px 0;">
-          <a href="#" onclick="showForgotPasswordForm()">Forgot password?</a>
-        </p>
-        
-        <button onclick="handleLogin()" class="full-width-button">Login</button>
-      </div>
 
-      <!-- Guest quick access -->
-      <div class="guest-divider">
-        <div class="divider-line"></div>
-        <div class="divider-text">or</div>
-        <div class="divider-line"></div>
-      </div>
+  // Ensure login tab is active by default
+  const loginTab = document.getElementById('loginTab');
+  const registerTab = document.getElementById('registerTab');
+  const loginForm = document.getElementById('loginForm');
+  const registerForm = document.getElementById('registerForm');
+  if (loginTab && registerTab && loginForm && registerForm) {
+    loginTab.classList.add('active');
+    registerTab.classList.remove('active');
+    loginForm.style.display = 'block';
+    registerForm.style.display = 'none';
+  }
 
-      <div id="guestForm" class="guest-form">
-        <label for="guestName">Continue as guest:</label>
-        <input type="text" id="guestName" class="modal-input" placeholder="Enter your name" />
+  // Reset login fields
+  const loginEmail = document.getElementById('loginEmail');
+  const loginPassword = document.getElementById('loginPassword');
+  if (loginEmail) loginEmail.value = '';
+  if (loginPassword) loginPassword.value = '';
 
-        <label class="guest-gender-title">Gender:</label>
-        <div class="gender-selection guest-gender">
-          <label class="gender-option">
-            <input type="radio" name="guestGender" value="Male" />
-            <span>♂ Male</span>
-          </label>
-          <label class="gender-option">
-            <input type="radio" name="guestGender" value="Female" />
-            <span>♀ Female</span>
-          </label>
-        </div>
-
-        <button onclick="handleGuestLogin()" class="outline-button">Continue as guest</button>
-        <p class="info-text">We’ll create a temporary guest account so you can start or join sessions without email.</p>
-      </div>
-
-      <!-- Register Form -->
-      <div id="registerForm" class="auth-form" style="display: none;">
-        <label for="registerEmail">Email:</label>
-        <input type="email" id="registerEmail" class="modal-input" placeholder="your@email.com" />
-        
-        <label for="registerPassword">Password:</label>
-        <input type="password" id="registerPassword" class="modal-input" placeholder="Min. 6 characters" />
-        
-        <label for="registerName">Name:</label>
-        <input type="text" id="registerName" class="modal-input" />
-        
-        <label>Gender:</label>
-        <div class="gender-selection">
-          <label class="gender-option">
-            <input type="radio" name="registerGender" value="Male" />
-            <span>Male</span>
-          </label>
-          <label class="gender-option">
-            <input type="radio" name="registerGender" value="Female" />
-            <span>Female</span>
-          </label>
-        </div>
-        
-        <label for="securityQuestion">Security Question:</label>
-        <select id="securityQuestion" class="modal-input">
-          <option value="">Select a security question</option>
-          <option value="pet">What was your first pet's name?</option>
-          <option value="street">What street did you grow up on?</option>
-          <option value="mother">What is your mother's maiden name?</option>
-          <option value="school">What elementary school did you attend?</option>
-          <option value="birth">In what city were you born?</option>
-        </select>
-        
-        <label for="securityAnswer">Your Answer:</label>
-        <input type="text" id="securityAnswer" class="modal-input" />
-        <div class="info-text">Remember this answer! You'll need it to recover your account if you forget your password.</div>
-        
-        <button onclick="handleRegister()" class="full-width-button">Register</button>
-      </div>
-    </div>
-  `;
-  
-  // Add CSS styles for the modal components
+  // Reset guest fields
+  const guestName = document.getElementById('guestName');
+  if (guestName) guestName.value = '';
+  const guestGenderRadios = document.querySelectorAll('input[name="guestGender"]');
+  guestGenderRadios.forEach(r => r.checked = false);
+}
+// Add CSS styles for the modal components
   document.head.insertAdjacentHTML('beforeend', `
     <style>
       .auth-tabs {
@@ -411,7 +347,7 @@ async function handleGuestLogin() {
 
       currentUser.isGuest = true;
 
-      // Close the modal and load app data
+      // Close modal and load app data
       const modal = document.getElementById('userModal');
       if (modal) {
         modal.style.display = 'none';
