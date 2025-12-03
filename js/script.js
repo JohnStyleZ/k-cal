@@ -100,8 +100,8 @@ function showInitialUserModal() {
           </label>
         </div>
 
-        <button onclick="handleGuestLogin()" class="outline-button">Continue as guest</button>
-        <p class="info-text">We’ll create a temporary guest account so you can start or join sessions without email.</p>
+        <button onclick="handleGuestLogin()" class="full-width-button guest-button">Continue as guest</button>
+        <p class="guest-info-text">We’ll create a temporary guest account so you can start or join sessions without email.</p>
       </div>
 
       <!-- Register Form -->
@@ -261,16 +261,16 @@ function showInitialUserModal() {
         margin-bottom: 10px;
       }
 
-      .outline-button {
-        width: 100%;
-        padding: 10px 12px;
-        background: #ffffff;
-        border: 1px solid var(--primary, #8956ff);
-        color: var(--primary, #8956ff);
-        border-radius: 8px;
-        font-size: 15px;
-        margin-top: 8px;
-        cursor: pointer;
+      .guest-button {
+        margin-top: 10px;
+      }
+
+      .guest-info-text {
+        font-size: 12px;
+        color: #666;
+        margin-top: 6px;
+        margin-bottom: 0;
+        line-height: 1.4;
       }
 </style>
   `);
@@ -282,17 +282,26 @@ function switchTab(tab) {
   const registerTab = document.getElementById('registerTab');
   const loginForm = document.getElementById('loginForm');
   const registerForm = document.getElementById('registerForm');
-  
+  const guestDivider = document.querySelector('.guest-divider');
+  const guestForm = document.getElementById('guestForm');
+
   if (tab === 'login') {
-    loginTab.classList.add('active');
-    registerTab.classList.remove('active');
-    loginForm.style.display = 'block';
-    registerForm.style.display = 'none';
+    if (loginTab) loginTab.classList.add('active');
+    if (registerTab) registerTab.classList.remove('active');
+    if (loginForm) loginForm.style.display = 'block';
+    if (registerForm) registerForm.style.display = 'none';
+    if (guestDivider) guestDivider.style.display = 'flex';
+    if (guestForm) guestForm.style.display = 'block';
   } else {
-    loginTab.classList.remove('active');
-    registerTab.classList.add('active');
-    loginForm.style.display = 'none';
-    registerForm.style.display = 'block';
+    if (loginTab) loginTab.classList.remove('active');
+    if (registerTab) registerTab.classList.add('active');
+    if (loginForm) loginForm.style.display = 'none';
+    if (registerForm) registerForm.style.display = 'block';
+    if (guestDivider) guestDivider.style.display = 'none';
+    if (guestForm) guestForm.style.display = 'none';
+  }
+}
+orm.style.display = 'block';
   }
 }
 
@@ -411,7 +420,7 @@ async function handleGuestLogin() {
 
       currentUser.isGuest = true;
 
-      // Close the modal and load app data
+      // Close modal and load app data
       const modal = document.getElementById('userModal');
       if (modal) {
         modal.style.display = 'none';
