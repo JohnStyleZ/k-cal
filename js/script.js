@@ -284,7 +284,7 @@ function switchTab(tab) {
   const registerForm = document.getElementById('registerForm');
   const guestDivider = document.querySelector('.guest-divider');
   const guestForm = document.getElementById('guestForm');
-
+  
   if (tab === 'login') {
     if (loginTab) loginTab.classList.add('active');
     if (registerTab) registerTab.classList.remove('active');
@@ -301,8 +301,7 @@ function switchTab(tab) {
     if (guestForm) guestForm.style.display = 'none';
   }
 }
-orm.style.display = 'block';
-}
+
 
 // Handle user login
 async function handleLogin() {
